@@ -1,0 +1,41 @@
+{
+  "name": "inews-gateway",
+  "version": "0.0.0",
+  "repository": "https://github.com/tv2/inews-gateway.git",
+  "license": "MIT",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node dist",
+    "build": "yarn clean && tsc --build",
+    "build-watch": "tsc --build --watch",
+    "watch": "nodemon",
+    "test": "jest --passWithNoTests",
+    "test-watch": "jest --watch --coverage",
+    "lint": "eslint .",
+    "lint-fix": "eslint --fix .",
+    "validate": "yarn validate-dependencies && yarn validate-licenses",
+    "validate-dependencies": "yarn audit --level moderate --groups dependencies --recursive",
+    "validate-licenses": "license-checker --production --onlyAllow \"MIT;MIT/X11;BSD;BSD-3-Clause;BSD-2-Clause;ISC;Apache;Apache-2.0;WTFPL;CC-BY-3.0;CC-BY-4.0;CC0-1.0;Unlicense\"",
+    "clean": "rimraf dist",
+    "reset": "rimraf --glob dist node_modules coverage \"*.log\""
+  },
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "^1.8.0",
+    "@types/license-checker": "^25",
+    "@types/node": "^20.12.8",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@types/jest": "^29.5.12",
+    "@vitest/coverage-v8": "^1.5.3",
+    "cross-env": "^7.0.3",
+    "eslint": "^9.1.1",
+    "jest": "^29.7.0",
+    "license-checker": "^25.0.1",
+    "nodemon": "^3.1.0",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
+    "ts-jest": "^29.1.4",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.3"
+  }
+}

@@ -2,12 +2,6 @@
   "name": "inews-gateway",
   "version": "0.0.0",
   "repository": "https://github.com/tv2/inews-gateway.git",
-  "contributors": [
-    {
-      "name": "Rasmus Emil Albrektsen",
-      "email": "<raal@tv2.dk>"
-    }
-  ],
   "license": "MIT",
   "type": "commonjs",
   "scripts": {

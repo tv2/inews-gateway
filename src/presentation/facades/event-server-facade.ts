@@ -1,6 +1,6 @@
 import { EventServer } from '../interfaces/event-server'
 import { SocketEventServer } from '../emitters/socket-event.server'
-import { LoggerFacade } from '../logger/logger-facade'
+import { LoggerFacade } from '../../logger/logger-facade'
 
 export class EventServerFacade {
   public static createEventServer(): EventServer {

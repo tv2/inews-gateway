@@ -1,11 +1,11 @@
 import cors from 'cors'
 import express, { Express } from 'express'
 import { Logger } from './logger/logger'
-import { EventServerFacade } from './facades/event-server-facade'
+import { EventServerFacade } from './presentation/facades/event-server-facade'
 import { LoggerFacade } from './logger/logger-facade'
 
 const REST_API_PORT: number = 3007
-const GATEWAY_EVENT_SERVER_PORT: number = 3008
+const EVENT_SERVER_PORT: number = 3008
 
 class INewsGateway {
   public server: Express
@@ -30,7 +30,7 @@ function attachExpressServerToPort(port: number): void {
 }
 
 function startEventServer(): void {
-  EventServerFacade.createEventServer().startServer(GATEWAY_EVENT_SERVER_PORT)
+  EventServerFacade.createEventServer().startServer(EVENT_SERVER_PORT)
 }
 
 startINewsGateway()

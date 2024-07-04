@@ -1,9 +1,8 @@
 import { EventServer } from '../interfaces/event-server'
-import { Logger } from '../logger/logger'
+import { Logger } from '../../logger/logger'
 import { Server } from 'socket.io'
 import express from 'express'
 import * as http from 'http'
-import {type} from "os";
 
 export class SocketEventServer implements EventServer {
   private static instance: EventServer
@@ -42,9 +41,9 @@ export class SocketEventServer implements EventServer {
       this.logger.info('Socket successfully registered to server')
       const rundowns: string = socket.handshake.query.rundowns as string
       if (rundowns) {
-        this.logger.data(rundowns).info('Rundowns received: ')
         this.clientRundowns = JSON.parse(rundowns)
       }
+      this.logger.data(this.clientRundowns).info('Current client rundowns: ')
     })
 
     this.socketServer.on('close', () => {

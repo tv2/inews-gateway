@@ -1,6 +1,6 @@
 import { EventServer } from '../interfaces/event-server'
 import { Logger } from '../../logger/logger'
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import express from 'express'
 import * as http from 'http'
 
@@ -16,7 +16,7 @@ export class SocketEventServer implements EventServer {
 
   private readonly logger: Logger
   private socketServer?: Server
-  private readonly clientRundowns: Map<string, string[]> = new Map()
+  private readonly clientRundowns: Map<string, Set<Socket>> = new Map()
 
   private constructor(logger: Logger) {
     this.logger = logger.tag(SocketEventServer.name)
@@ -40,10 +40,12 @@ export class SocketEventServer implements EventServer {
     this.socketServer.on('connection', (socket) => {
       this.logger.info('Socket successfully registered to server')
       const rundowns: string[] = JSON.parse(socket.handshake.query.rundowns as string)
-      const id: string | undefined = socket.handshake.query.id as string
-      if (rundowns && id) {
-        this.addClientRundowns(rundowns, id)
+      if (rundowns) {
+        this.addClientRundowns(rundowns, socket)
       }
+      socket.on('disconnect', () => {
+        this.removeClientSocket(socket)
+      })
     })
 
     this.socketServer.on('close', () => {
@@ -63,13 +65,18 @@ export class SocketEventServer implements EventServer {
     return socketServer
   }
 
-  private addClientRundowns(rundowns: string[], id: string): void {
+  private addClientRundowns(rundowns: string[], socket: Socket): void {
     rundowns.forEach((rundown) => {
-      const clients: string[] = this.clientRundowns.get(rundown) ?? []
-      if (!clients.includes(id)) {
-        clients.push(id)
-        this.clientRundowns.set(rundown, clients)
-      }
+      const sockets: Set<Socket> = this.clientRundowns.get(rundown) ?? new Set<Socket>()
+      sockets.add(socket)
+      this.clientRundowns.set(rundown, sockets)
+    })
+  }
+
+  private removeClientSocket(socket: Socket): void {
+    console.log(this.clientRundowns)
+    this.clientRundowns.forEach((socketSet) => {
+      socketSet.delete(socket)
     })
   }
 

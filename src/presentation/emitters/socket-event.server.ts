@@ -66,11 +66,11 @@ export class SocketEventServer implements EventServer {
     this.addObserversForSocket(socket)
     const rundowns: string[] = JSON.parse(socket.handshake.query.rundowns as string)
     if (rundowns) {
-      this.addClientRundowns(rundowns, socket)
+      this.addSocketToClientRundowns(rundowns, socket)
     }
 
     socket.on('disconnect', () => {
-      this.removeClientSocket(socket)
+      this.removeSocketFromClientRundowns(socket)
     })
   }
 
@@ -82,7 +82,7 @@ export class SocketEventServer implements EventServer {
     this.ingestEventEmitter.emitTestEvent()
   }
 
-  private addClientRundowns(rundowns: string[], socket: Socket): void {
+  private addSocketToClientRundowns(rundowns: string[], socket: Socket): void {
     rundowns.forEach((rundown) => {
       const sockets: Set<Socket> = this.clientRundowns.get(rundown) ?? new Set<Socket>()
       sockets.add(socket)
@@ -90,8 +90,7 @@ export class SocketEventServer implements EventServer {
     })
   }
 
-  private removeClientSocket(socket: Socket): void {
-    console.log(this.clientRundowns)
+  private removeSocketFromClientRundowns(socket: Socket): void {
     this.clientRundowns.forEach((socketSet) => {
       socketSet.delete(socket)
     })

@@ -16,7 +16,7 @@ export class SocketEventServer implements EventServer {
 
   private readonly logger: Logger
   private socketServer?: Server
-  private clientRundowns: string[] = []
+  private readonly clientRundowns: Map<string, string[]> = new Map()
 
   private constructor(logger: Logger) {
     this.logger = logger.tag(SocketEventServer.name)
@@ -39,11 +39,11 @@ export class SocketEventServer implements EventServer {
 
     this.socketServer.on('connection', (socket) => {
       this.logger.info('Socket successfully registered to server')
-      const rundowns: string = socket.handshake.query.rundowns as string
-      if (rundowns) {
-        this.clientRundowns = JSON.parse(rundowns)
+      const rundowns: string[] = JSON.parse(socket.handshake.query.rundowns as string)
+      const id: string | undefined = socket.handshake.query.id as string
+      if (rundowns && id) {
+        this.addClientRundowns(rundowns, id)
       }
-      this.logger.data(this.clientRundowns).info('Current client rundowns: ')
     })
 
     this.socketServer.on('close', () => {
@@ -61,6 +61,16 @@ export class SocketEventServer implements EventServer {
     })
 
     return socketServer
+  }
+
+  private addClientRundowns(rundowns: string[], id: string): void {
+    rundowns.forEach((rundown) => {
+      const clients: string[] = this.clientRundowns.get(rundown) ?? []
+      if (!clients.includes(id)) {
+        clients.push(id)
+        this.clientRundowns.set(rundown, clients)
+      }
+    })
   }
 
   public stopServer(): void {

@@ -19,6 +19,9 @@
     "clean": "rimraf dist",
     "reset": "rimraf --glob dist node_modules coverage \"*.log\""
   },
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^1.8.0",
     "@types/jest": "^29.5.12",

@@ -45,28 +45,28 @@ export class WebsocketServer implements ClientConnectionServer {
   }
 
   private registerWebsocket(websocket: ws.WebSocket, request: http.IncomingMessage): void {
-    const sessionId: string = this.generateSessionId()
+    const clientId: string = this.generateclientId()
     try {
       websocket.on('close', () => {
-        this.cleanseWebsocket(sessionId)
-        this.disconnectedCallback?.(sessionId)
+        this.cleanseWebsocket(clientId)
+        this.disconnectedCallback?.(clientId)
       })
-      this.websockets.set(sessionId, websocket)
+      this.websockets.set(clientId, websocket)
       const queryParameters: Record<string, string> = this.getQueryParameters(request)
-      this.connectedCallback?.(sessionId, queryParameters)
+      this.connectedCallback?.(clientId, queryParameters)
     } catch (error: unknown) {
-      this.logger.data(error).warn(`Failed registering client with session id '${sessionId}'.`)
+      this.logger.data(error).warn(`Failed registering client with client id '${clientId}'.`)
       websocket.close()
     }
   }
 
-  private generateSessionId(): string {
+  private generateclientId(): string {
     return process.hrtime.bigint().toString(16)
   }
 
-  private cleanseWebsocket(sessionId: string): void {
-    this.websockets.get(sessionId)?.close()
-    this.websockets.delete(sessionId)
+  private cleanseWebsocket(clientId: string): void {
+    this.websockets.get(clientId)?.close()
+    this.websockets.delete(clientId)
   }
 
   private getQueryParameters(request: http.IncomingMessage): Record<string, string> {
@@ -74,10 +74,10 @@ export class WebsocketServer implements ClientConnectionServer {
     return Object.fromEntries(urlSearchParams.entries())
   }
 
-  public sendTo(sessionId: string, message: string | Buffer): void {
-    const websocket: ws.WebSocket | undefined = this.websockets.get(sessionId)
+  public sendTo(clientId: string, message: string | Buffer): void {
+    const websocket: ws.WebSocket | undefined = this.websockets.get(clientId)
     if (!websocket) {
-      throw new Error(`Received unknown session id '${sessionId}' when trying to send message '${message}'.`)
+      throw new Error(`Received unknown client id '${clientId}' when trying to send message '${message}'.`)
     }
     websocket.send(message)
   }

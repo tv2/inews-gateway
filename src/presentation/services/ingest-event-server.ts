@@ -9,7 +9,7 @@ export class IngestEventServer {
   private readonly logger: Logger
 
   public constructor(
-    private readonly clientConnector: ClientConnectionServer,
+    private readonly clientConnectionServer: ClientConnectionServer,
     private readonly ingestEventObserver: IngestEventObserver,
     logger: Logger,
   ) {
@@ -21,19 +21,19 @@ export class IngestEventServer {
     const serializedIngestEvent: string = JSON.stringify(ingestEvent)
     this.queueSubscriptions
       .get(ingestEvent.queueId)
-      ?.forEach(sessionId => this.clientConnector.sendTo(sessionId, serializedIngestEvent))
+      ?.forEach(clientId => this.clientConnectionServer.sendTo(clientId, serializedIngestEvent))
   }
 
   public async start(port: number): Promise<void> {
-    this.clientConnector.onConnectedClient(this.registerClient.bind(this))
-    this.clientConnector.onDisconnectedClient(this.deregisterClient.bind(this))
-    await this.clientConnector.start(port)
+    this.clientConnectionServer.onConnectedClient(this.registerClient.bind(this))
+    this.clientConnectionServer.onDisconnectedClient(this.deregisterClient.bind(this))
+    await this.clientConnectionServer.start(port)
   }
 
-  private registerClient(sessionId: string, options: Record<string, unknown>): void {
+  private registerClient(clientId: string, options: Record<string, unknown>): void {
     const clientConfiguration: ClientConfiguration = this.getClientConfiguration(options)
-    this.registerClientToQueues(sessionId, clientConfiguration.queueIds)
-    this.logger.data(clientConfiguration).debug(`Client with session id '${sessionId}' is registered with ${clientConfiguration.queueIds.length} queue(s).`)
+    this.registerClientToQueues(clientId, clientConfiguration.queueIds)
+    this.logger.data(clientConfiguration).debug(`Client with client id '${clientId}' is registered with ${clientConfiguration.queueIds.length} queue(s).`)
     this.logger.data([...this.queueSubscriptions.keys()]).debug(`${this.queueSubscriptions.size} queue(s) are registered.`)
   }
 
@@ -51,27 +51,27 @@ export class IngestEventServer {
     return typeof text === 'string'
   }
 
-  private registerClientToQueues(sessionId: string, queueIds: string[]): void {
-    queueIds.forEach(queueId => this.registerClientToQueue(sessionId, queueId))
+  private registerClientToQueues(clientId: string, queueIds: string[]): void {
+    queueIds.forEach(queueId => this.registerClientToQueue(clientId, queueId))
   }
 
-  private registerClientToQueue(sessionId: string, queueId: string): void {
-    const sessionIds: Set<string> = this.queueSubscriptions.get(queueId) ?? new Set()
-    sessionIds.add(sessionId)
-    this.queueSubscriptions.set(queueId, sessionIds)
+  private registerClientToQueue(clientId: string, queueId: string): void {
+    const clientIds: Set<string> = this.queueSubscriptions.get(queueId) ?? new Set()
+    clientIds.add(clientId)
+    this.queueSubscriptions.set(queueId, clientIds)
   }
 
-  private deregisterClient(sessionId: string): void {
-    this.queueSubscriptions.forEach((sessionIds: Set<string>, queueId: string) => {
-      sessionIds.delete(sessionId)
-      if (sessionIds.size === 0) {
+  private deregisterClient(clientId: string): void {
+    this.queueSubscriptions.forEach((clientIds: Set<string>, queueId: string) => {
+      clientIds.delete(clientId)
+      if (clientIds.size === 0) {
         this.queueSubscriptions.delete(queueId)
       }
     })
-    this.logger.data([...this.queueSubscriptions.keys()]).debug(`Client with session id '${sessionId}' disconnected. ${this.queueSubscriptions.size} queue(s) are still registered.`)
+    this.logger.data([...this.queueSubscriptions.keys()]).debug(`Client with client id '${clientId}' disconnected. ${this.queueSubscriptions.size} queue(s) are still registered.`)
   }
 
   public stopServer(): void {
-    this.clientConnector.stop()
+    this.clientConnectionServer.stop()
   }
 }

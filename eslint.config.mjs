@@ -64,7 +64,14 @@ export default [
       '@stylistic/no-extra-parens': ['error', 'all'],
       '@stylistic/object-curly-spacing': ['error', 'always'],
       '@stylistic/space-before-blocks': ['error', 'always'],
-      '@stylistic/space-before-function-paren': ['error', 'never'],
+      '@stylistic/space-before-function-paren': [
+        'error',
+        {
+          anonymous: 'never',
+          named: 'never',
+          asyncArrow: 'always',
+        },
+      ],
       '@stylistic/space-infix-ops': 'error',
       '@stylistic/type-annotation-spacing': 'error',
       '@stylistic/rest-spread-spacing': ['error', 'never'],

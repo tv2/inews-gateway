@@ -3,6 +3,8 @@ import { IngestEventObserver } from '../interfaces/ingest-event-observer'
 import { IngestEventBuilder } from '../interfaces/ingest-event-builder'
 import { IngestEvent } from '../value-objects/ingest-event'
 
+export type IngestEventCallback = (ingest: IngestEvent) => void
+
 export class IngestEventService implements IngestEventEmitter, IngestEventObserver {
   public static instance: IngestEventService
 
@@ -13,20 +15,20 @@ export class IngestEventService implements IngestEventEmitter, IngestEventObserv
     return this.instance
   }
 
-  private readonly callbacks: ((ingestEvent: IngestEvent) => void)[] = []
+  private readonly callbacks: IngestEventCallback[] = []
 
   private constructor(private readonly ingestEventBuilder: IngestEventBuilder) {}
+
+  public emitTestEvent(): void {
+    const event: IngestEvent = this.ingestEventBuilder.buildTestEvent('MY.TEST.QUEUE')
+    this.emitIngestEvent(event)
+  }
 
   private emitIngestEvent(ingestEvent: IngestEvent): void {
     this.callbacks.forEach(callback => callback(ingestEvent))
   }
 
-  public emitTestEvent(): void {
-    const event: IngestEvent = this.ingestEventBuilder.buildTestEvent()
-    this.emitIngestEvent(event)
-  }
-
-  public subscribeToIngestEvents(onIngestEventCallback: (ingestEvent: IngestEvent) => void): void {
+  public subscribeToIngestEvents(onIngestEventCallback: IngestEventCallback): void {
     this.callbacks.push(onIngestEventCallback)
   }
 }

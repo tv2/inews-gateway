@@ -1,5 +1,5 @@
 import { IngestEvent } from '../value-objects/ingest-event'
 
 export interface IngestEventBuilder {
-  buildTestEvent(): IngestEvent
+  buildTestEvent(queueId: string): IngestEvent
 }

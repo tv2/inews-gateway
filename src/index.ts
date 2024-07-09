@@ -1,36 +1,13 @@
-import cors from 'cors'
-import express, { Express } from 'express'
-import { Logger } from './logger/logger'
-import { EventServerFacade } from './presentation/facades/event-server-facade'
+import { IngestEventServerFactory } from './presentation/factories/ingest-event-server-factory'
 import { LoggerFacade } from './logger/logger-facade'
+import { InewsGatewayServer } from './inews-gateway-server'
+import { EventEmitterFacade } from './presentation/facades/event-emitter-facade'
 
-const REST_API_PORT: number = 3007
 const EVENT_SERVER_PORT: number = 3008
 
-class INewsGateway {
-  public server: Express
-
-  public constructor() {
-    this.server = express()
-    this.server.use(express.json())
-    this.server.use(cors())
-  }
-}
-
-function startINewsGateway(): void {
-  attachExpressServerToPort(REST_API_PORT)
-  startEventServer()
-}
-
-function attachExpressServerToPort(port: number): void {
-  new INewsGateway().server.listen(port, () => {
-    const logger: Logger = LoggerFacade.createLogger().tag('Startup')
-    return logger.info(`Express is listening at http://localhost:${port}`)
-  })
-}
-
-function startEventServer(): void {
-  EventServerFacade.createEventServer().startServer(EVENT_SERVER_PORT)
-}
-
-startINewsGateway()
+new InewsGatewayServer(
+  IngestEventServerFactory.createIngestEventWebsocketServer(),
+  EventEmitterFacade.createIngestEventEmitter(),
+)
+  .startEventServer(EVENT_SERVER_PORT)
+  .catch(LoggerFacade.createLogger().tag('startup').error)

@@ -6,9 +6,7 @@ export class ConsoleLogger extends NodeEnvironmentLogger implements Logger {
   private static instance: ConsoleLogger
 
   public static getInstance(): ConsoleLogger {
-    if (!this.instance) {
-      this.instance = new ConsoleLogger()
-    }
+    this.instance ??= new ConsoleLogger()
     return this.instance
   }
 

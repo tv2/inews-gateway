@@ -9,9 +9,7 @@ export class IngestEventService implements IngestEventEmitter, IngestEventObserv
   public static instance: IngestEventService
 
   public static getInstance(ingestEventBuilder: IngestEventBuilder): IngestEventService {
-    if (!this.instance) {
-      this.instance = new IngestEventService(ingestEventBuilder)
-    }
+    this.instance ??= new IngestEventService(ingestEventBuilder)
     return this.instance
   }
 

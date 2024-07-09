@@ -35,7 +35,7 @@ export class IngestEventServer {
   private registerClient(clientId: string, options: Record<string, unknown>): void {
     const clientConfiguration: ClientConfiguration = this.getClientConfiguration(options)
     this.registerClientToQueues(clientId, clientConfiguration.queueIds)
-    this.emitQueuePoolIfChanged()
+    this.emitQueuePool()
     this.logger.data(clientConfiguration).debug(`Client with client id '${clientId}' is registered with ${clientConfiguration.queueIds.length} queue(s).`)
     this.logger.data([...this.queueSubscriptions.keys()]).debug(`${this.queueSubscriptions.size} queue(s) are registered.`)
   }
@@ -64,7 +64,7 @@ export class IngestEventServer {
     this.queueSubscriptions.set(queueId, clientIds)
   }
 
-  private emitQueuePoolIfChanged(): void {
+  private emitQueuePool(): void {
     const queuePool: Set<string> = this.generateQueuePool()
     this.queuePoolObserver.emitQueuePool(queuePool)
   }
@@ -80,7 +80,7 @@ export class IngestEventServer {
         this.queueSubscriptions.delete(queueId)
       }
     })
-    this.emitQueuePoolIfChanged()
+    this.emitQueuePool()
     this.logger.data([...this.queueSubscriptions.keys()]).debug(`Client with client id '${clientId}' disconnected. ${this.queueSubscriptions.size} queue(s) are still registered.`)
   }
 

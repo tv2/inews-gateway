@@ -24,7 +24,7 @@ export class IngestEventServer {
       ?.forEach(sessionId => this.clientConnector.sendTo(sessionId, serializedIngestEvent))
   }
 
-  public async startServer(port: number): Promise<void> {
+  public async start(port: number): Promise<void> {
     this.clientConnector.onConnectedClient(this.registerClient.bind(this))
     this.clientConnector.onDisconnectedClient(this.deregisterClient.bind(this))
     await this.clientConnector.start(port)

@@ -1,3 +1,3 @@
 export interface IngestEventEmitter {
-  emitTestEvent(): void
+  emitTestEvent(queueId: string): void
 }

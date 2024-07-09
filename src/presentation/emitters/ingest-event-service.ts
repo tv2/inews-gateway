@@ -17,8 +17,8 @@ export class IngestEventService implements IngestEventEmitter, IngestEventObserv
 
   private constructor(private readonly ingestEventBuilder: IngestEventBuilder) {}
 
-  public emitTestEvent(): void {
-    const event: IngestEvent = this.ingestEventBuilder.buildTestEvent('MY.TEST.QUEUE')
+  public emitTestEvent(queueId: string): void {
+    const event: IngestEvent = this.ingestEventBuilder.buildTestEvent(queueId)
     this.emitIngestEvent(event)
   }
 

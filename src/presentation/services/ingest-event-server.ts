@@ -3,6 +3,7 @@ import { Logger } from '../../logger/logger'
 import { IngestEventObserver } from '../interfaces/ingest-event-observer'
 import { IngestEvent } from '../value-objects/ingest-event'
 import { ClientConnectionServer } from '../interfaces/client-connection-server'
+import { QueuePoolObserver } from '../emitters/queue-pool-observer'
 
 export class IngestEventServer {
   private readonly queueSubscriptions: Map<string, Set<string>> = new Map()
@@ -11,6 +12,7 @@ export class IngestEventServer {
   public constructor(
     private readonly clientConnectionServer: ClientConnectionServer,
     private readonly ingestEventObserver: IngestEventObserver,
+    private readonly queuePoolObserver: QueuePoolObserver,
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
@@ -33,6 +35,7 @@ export class IngestEventServer {
   private registerClient(clientId: string, options: Record<string, unknown>): void {
     const clientConfiguration: ClientConfiguration = this.getClientConfiguration(options)
     this.registerClientToQueues(clientId, clientConfiguration.queueIds)
+    this.emitQueuePoolIfChanged()
     this.logger.data(clientConfiguration).debug(`Client with client id '${clientId}' is registered with ${clientConfiguration.queueIds.length} queue(s).`)
     this.logger.data([...this.queueSubscriptions.keys()]).debug(`${this.queueSubscriptions.size} queue(s) are registered.`)
   }
@@ -61,6 +64,15 @@ export class IngestEventServer {
     this.queueSubscriptions.set(queueId, clientIds)
   }
 
+  private emitQueuePoolIfChanged(): void {
+    const queuePool: Set<string> = this.generateQueuePool()
+    this.queuePoolObserver.emitQueuePool(queuePool)
+  }
+
+  private generateQueuePool(): Set<string> {
+    return new Set(this.queueSubscriptions.keys())
+  }
+
   private deregisterClient(clientId: string): void {
     this.queueSubscriptions.forEach((clientIds: Set<string>, queueId: string) => {
       clientIds.delete(clientId)
@@ -68,6 +80,7 @@ export class IngestEventServer {
         this.queueSubscriptions.delete(queueId)
       }
     })
+    this.emitQueuePoolIfChanged()
     this.logger.data([...this.queueSubscriptions.keys()]).debug(`Client with client id '${clientId}' disconnected. ${this.queueSubscriptions.size} queue(s) are still registered.`)
   }
 

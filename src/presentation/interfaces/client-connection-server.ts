@@ -4,7 +4,7 @@ export type DisconnectedCallback = (clientId: string) => void
 export interface ClientConnectionServer {
   onConnectedClient(connectedCallback: ConnectedCallback): void
   onDisconnectedClient(disconnectedCallback: DisconnectedCallback): void
-  sendTo(clientId: string, message: string | Buffer): void
+  sendMessageToClient(clientId: string, message: string | Buffer): void
   start(port: number): Promise<void>
   stop(): void
 }

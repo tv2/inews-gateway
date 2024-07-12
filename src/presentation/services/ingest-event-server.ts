@@ -21,7 +21,7 @@ export class IngestEventServer {
     const serializedIngestEvent: string = JSON.stringify(ingestEvent)
     this.queueSubscriptions
       .get(ingestEvent.queueId)
-      ?.forEach(clientId => this.clientConnectionServer.sendTo(clientId, serializedIngestEvent))
+      ?.forEach(clientId => this.clientConnectionServer.sendMessageToClient(clientId, serializedIngestEvent))
   }
 
   public async start(port: number): Promise<void> {

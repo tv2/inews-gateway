@@ -74,7 +74,7 @@ export class WebsocketServer implements ClientConnectionServer {
     return Object.fromEntries(urlSearchParams.entries())
   }
 
-  public sendTo(clientId: string, message: string | Buffer): void {
+  public sendMessageToClient(clientId: string, message: string | Buffer): void {
     const websocket: ws.WebSocket | undefined = this.websockets.get(clientId)
     if (!websocket) {
       throw new Error(`Received unknown client id '${clientId}' when trying to send message '${message}'.`)

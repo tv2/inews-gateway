@@ -3,9 +3,14 @@ import { FtpConnectionConfiguration } from '../value-objects/ftp-connection-conf
 import * as basicFtp from 'basic-ftp'
 import { PassThrough } from 'node:stream'
 import { Logger } from '../../logger/logger'
+import { FileMetadata } from '../value-objects/file-metadata'
+import { ConnectionStatus } from '../enums/connection-status'
+
+const CONNECTION_TIMEOUT_DURATION_IN_MS: number = 4000
 
 export class BasicFtpFtpClient implements FtpClient {
-  private readonly ftpClient: basicFtp.Client = new basicFtp.Client()
+  private onConnectionStatusChangedCallback?: (connectionStatus: ConnectionStatus) => void
+  private readonly ftpClient: basicFtp.Client = new basicFtp.Client(CONNECTION_TIMEOUT_DURATION_IN_MS)
   private readonly logger: Logger
 
   public constructor(
@@ -16,24 +21,54 @@ export class BasicFtpFtpClient implements FtpClient {
   }
 
   public async connect(): Promise<void> {
-    await this.ftpClient.access({
-      host: this.configuration.host,
-      port: this.configuration.port,
-      user: this.configuration.user,
-      password: this.configuration.password,
-      secure: false,
-    })
-    this.logger.info(`Connected to FTP server ${this.configuration.host}:${this.configuration.port}.`)
-    this.ftpClient.ftp.socket.on('end', () => this.logger.info(`FTP server ${this.configuration.host}:${this.configuration.port} terminated the connection.`))
+    try {
+      this.onConnectionStatusChangedCallback?.(ConnectionStatus.CONNECTING)
+      await this.ftpClient.access({
+        host: this.configuration.host,
+        port: this.configuration.port,
+        user: this.configuration.user,
+        password: this.configuration.password,
+        secure: false,
+      })
+      this.onConnectionStatusChangedCallback?.(ConnectionStatus.CONNECTED)
+      this.logger.info(`Connected to FTP server ${this.configuration.host}:${this.configuration.port}.`)
+      this.ftpClient.ftp.socket.on('timeout', () => {
+        this.logger.info(`The connection to the FTP server ${this.configuration.host}:${this.configuration.port} timed out.`)
+        this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+      })
+      this.ftpClient.ftp.socket.on('end', () => {
+        this.logger.info(`FTP server ${this.configuration.host}:${this.configuration.port} terminated the connection.`)
+        this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+      })
+    } catch (error) {
+      this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+      throw error
+    }
+  }
+
+  public isConnected(): boolean {
+    return !this.ftpClient.closed
+  }
+
+  public setOnConnectionStatusChangedCallback(onConnectionStatusChangedCallback: (connectionStatus: ConnectionStatus) => void): void {
+    this.onConnectionStatusChangedCallback = onConnectionStatusChangedCallback
   }
 
   public async changeWorkingDirectory(path: string): Promise<void> {
     await this.ftpClient.cd(path)
   }
 
-  public async listFiles(): Promise<readonly string[]> {
+  public async listFiles(): Promise<readonly FileMetadata[]> {
     const fileInfos: basicFtp.FileInfo[] = await this.ftpClient.list()
-    return fileInfos.map(fileInfo => fileInfo.name)
+    return fileInfos.map(fileInfo => this.mapToFileMetadata(fileInfo))
+  }
+
+  private mapToFileMetadata(fileInfo: basicFtp.FileInfo): FileMetadata {
+    return {
+      type: basicFtp.FileType[fileInfo.type].toLowerCase(),
+      name: fileInfo.name,
+      modifiedAt: fileInfo.rawModifiedAt,
+    }
   }
 
   public async getFile(filename: string): Promise<string> {
@@ -43,10 +78,11 @@ export class BasicFtpFtpClient implements FtpClient {
   }
 
   public async disconnect(): Promise<void> {
-    if (this.ftpClient.closed) {
+    if (!this.isConnected()) {
       return
     }
     this.ftpClient.close()
+    this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
     this.logger.info(`Disconnected from FTP server ${this.configuration.host}:${this.configuration.port}.`)
     return Promise.resolve()
   }

@@ -1,14 +1,14 @@
 import { ConnectionStatusObserver } from '../interfaces/connection-status-observer'
 import { FtpClient } from '../../data-access/interfaces/ftp-client'
 import { FileMetadata } from '../../data-access/value-objects/file-metadata'
-import { InewsTimestampParser } from './inews-timestamp-parser'
+import { InewsTimestampParserImplementation } from './inews-timestamp-parser-implementation'
 import { StoryMetadata } from '../value-objects/story-metadata'
 import { InewsClient } from '../interfaces/inews-client'
 
 export class FtpInewsClient implements InewsClient {
   public constructor(
     private readonly ftpClient: FtpClient,
-    private readonly inewsTimestampParser: InewsTimestampParser,
+    private readonly inewsTimestampParser: InewsTimestampParserImplementation,
     private readonly connectionStatusObserver: ConnectionStatusObserver,
   ) {}
 
@@ -27,7 +27,7 @@ export class FtpInewsClient implements InewsClient {
       .map(fileMetadata => ({
         id: this.getStoryIdFromFileMetadata(fileMetadata),
         name: this.getStoryNameFromFileMetadata(fileMetadata),
-        modifiedAtEpochTime: this.inewsTimestampParser.parse(fileMetadata.modifiedAt),
+        modifiedAtEpochTime: this.inewsTimestampParser.parseInewsTimestamp(fileMetadata.modifiedAt),
       }))
   }
 

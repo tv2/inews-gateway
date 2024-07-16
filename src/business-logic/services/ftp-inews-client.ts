@@ -1,14 +1,14 @@
 import { ConnectionStatusObserver } from '../interfaces/connection-status-observer'
 import { FtpClient } from '../../data-access/interfaces/ftp-client'
 import { FileMetadata } from '../../data-access/value-objects/file-metadata'
-import { InewsTimestampParser } from './inews-timestamp-parser'
+import { InewsFtpTimestampParser } from './inews-ftp-timestamp-parser'
 import { StoryMetadata } from '../value-objects/story-metadata'
 import { InewsClient } from '../interfaces/inews-client'
 
 export class FtpInewsClient implements InewsClient {
   public constructor(
     private readonly ftpClient: FtpClient,
-    private readonly inewsTimestampParser: InewsTimestampParser,
+    private readonly inewsTimestampParser: InewsFtpTimestampParser,
     private readonly connectionStatusObserver: ConnectionStatusObserver,
   ) {}
 

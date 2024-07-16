@@ -2,11 +2,16 @@ import { ConnectionStatus } from '../enums/connection-status'
 import { FtpClient } from '../interfaces/ftp-client'
 import { FileMetadata } from '../value-objects/file-metadata'
 
+const MAX_FAILED_OPERATIONS_THRESHOLD: number = 20
+const SUCCESSFUL_OPERATION_WEIGHT: number = 1
+const FAILED_OPERATION_WEIGHT: number = 2
+
 export class RoundRobinFtpClientPool implements FtpClient {
   private connectedFtpClient?: FtpClient
   private onConnectionStatusChangedCallback?: (connectionStatus: ConnectionStatus) => void
+  private failedOperationsTracker: number = 0
 
-  public constructor(private readonly ftpClients: readonly FtpClient[]) {}
+  public constructor(private ftpClients: readonly FtpClient[]) {}
 
   public async connect(): Promise<void> {
     await this.getConnectedFtpClient()
@@ -45,18 +50,54 @@ export class RoundRobinFtpClientPool implements FtpClient {
   }
 
   public async changeWorkingDirectory(path: string): Promise<void> {
-    const ftpClient: FtpClient = await this.getConnectedFtpClient()
-    await ftpClient.changeWorkingDirectory(path)
+    return this.trackFailedOperations(async () => {
+      const ftpClient: FtpClient = await this.getConnectedFtpClient()
+      await ftpClient.changeWorkingDirectory(path)
+    })
+  }
+
+  private async trackFailedOperations<T>(operationCallback: () => Promise<T>): Promise<T> {
+    await this.reconnectIfHasTooManyFailedOperations()
+    try {
+      const result: T = await operationCallback()
+      this.failedOperationsTracker = Math.max(0, this.failedOperationsTracker - SUCCESSFUL_OPERATION_WEIGHT)
+      return result
+    } catch (error) {
+      this.failedOperationsTracker += FAILED_OPERATION_WEIGHT
+      throw error
+    }
+  }
+
+  private async reconnectIfHasTooManyFailedOperations(): Promise<void> {
+    if (this.failedOperationsTracker <= MAX_FAILED_OPERATIONS_THRESHOLD) {
+      return
+    }
+    this.downPrioritizeConnectedFtpClient()
+    this.connectedFtpClient = await this.getFtpClientByRoundRobin()
+    this.failedOperationsTracker = 0
+  }
+
+  private downPrioritizeConnectedFtpClient(): void {
+    if (!this.connectedFtpClient) {
+      return
+    }
+    this.ftpClients = this.ftpClients
+      .filter(ftpClient => ftpClient !== this.connectedFtpClient)
+      .concat(this.connectedFtpClient)
   }
 
   public async listFiles(): Promise<readonly FileMetadata[]> {
-    const ftpClient: FtpClient = await this.getConnectedFtpClient()
-    return ftpClient.listFiles()
+    return this.trackFailedOperations(async () => {
+      const ftpClient: FtpClient = await this.getConnectedFtpClient()
+      return ftpClient.listFiles()
+    })
   }
 
   public async getFile(filename: string): Promise<string> {
-    const ftpClient: FtpClient = await this.getConnectedFtpClient()
-    return ftpClient.getFile(filename)
+    return this.trackFailedOperations(async () => {
+      const ftpClient: FtpClient = await this.getConnectedFtpClient()
+      return ftpClient.getFile(filename)
+    })
   }
 
   public setOnConnectionStatusChangedCallback(onConnectionStatusChangedCallback: (connectionStatus: ConnectionStatus) => void): void {

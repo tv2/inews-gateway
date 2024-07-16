@@ -1,4 +1,4 @@
-import { InewsFtpTimestampParser } from './inews-ftp-timestamp-parser'
+import { InewsFtpTimestampParser } from './inews-ftp-timestamp-parser-implementation'
 
 describe(InewsFtpTimestampParser.name, () => {
   beforeEach(() => {

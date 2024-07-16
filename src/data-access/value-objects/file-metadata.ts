@@ -1,5 +1,5 @@
 export interface FileMetadata {
-  type: string
-  name: string
-  modifiedAt: string
+  readonly type: string
+  readonly name: string
+  readonly modifiedAt: string
 }

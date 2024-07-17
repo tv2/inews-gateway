@@ -2,7 +2,7 @@ import { FtpClient } from '../../data-access/interfaces/ftp-client'
 import { FileMetadata } from '../../data-access/value-objects/file-metadata'
 import { StoryMetadata } from '../value-objects/story-metadata'
 import { InewsClient } from '../interfaces/inews-client'
-import { InewsFtpTimestampParser } from '../interfaces/inews-ftp-timestamp-parser'
+import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
 import { ConnectionStatus } from '../../data-access/enums/connection-status'
 
 export class FtpInewsClient implements InewsClient {
@@ -10,7 +10,7 @@ export class FtpInewsClient implements InewsClient {
 
   public constructor(
     private readonly ftpClient: FtpClient,
-    private readonly inewsTimestampParser: InewsFtpTimestampParser,
+    private readonly inewsTimestampParser: InewsTimestampParser,
   ) {}
 
   public async connect(): Promise<void> {

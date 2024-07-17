@@ -1,6 +1,6 @@
-import { InewsFtpTimestampParser } from '../interfaces/inews-ftp-timestamp-parser'
+import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
 
-export class InewsFtpTimestampParserImplementation implements InewsFtpTimestampParser {
+export class InewsFtpTimestampParser implements InewsTimestampParser {
   public parseInewsFtpTimestamp(timestampText: string): number {
     const timePattern: RegExp = /(?<month>[a-z]+)\s+(?<dayOfMonth>\d+)\s+((?<hours>\d{2}):(?<minutes>\d{2})|(?<year>\d{4}))/i
     const matchedGroup: Record<string, string> | undefined = timePattern.exec(timestampText)?.groups

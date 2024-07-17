@@ -1,3 +1,3 @@
-export interface InewsFtpTimestampParser {
+export interface InewsTimestampParser {
   parseInewsFtpTimestamp(timestampText: string): number
 }

@@ -1,3 +1,3 @@
-export interface TypedEvent {
-  type: string
+export interface TypedEvent<Type extends string = string> {
+  type: Type
 }

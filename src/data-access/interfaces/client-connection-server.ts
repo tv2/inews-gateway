@@ -5,6 +5,7 @@ export interface ClientConnectionServer {
   onConnectedClient(connectedCallback: ConnectedCallback): void
   onDisconnectedClient(disconnectedCallback: DisconnectedCallback): void
   sendMessageToClient(clientId: string, message: string | Buffer): void
+  broadcastMessageToAllClients(message: string | Buffer): void
   start(port: number): Promise<void>
   stop(): void
 }

@@ -4,6 +4,8 @@ import { IngestEventObserver } from '../interfaces/ingest-event-observer'
 import { IngestEvent } from '../value-objects/ingest-event'
 import { ClientConnectionServer } from '../../data-access/interfaces/client-connection-server'
 import { EventServer } from '../interfaces/event-server'
+import { ConnectionStateEventObserver } from '../interfaces/connection-state-event-observer'
+import { TypedEvent } from '../value-objects/typed-event'
 
 export class ClientEventServer implements EventServer {
   private readonly queueSubscriptions: Map<string, Set<string>> = new Map()
@@ -12,10 +14,12 @@ export class ClientEventServer implements EventServer {
   public constructor(
     private readonly clientConnectionServer: ClientConnectionServer,
     private readonly ingestEventObserver: IngestEventObserver,
+    private readonly connectionStateEventObserver: ConnectionStateEventObserver,
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
     this.ingestEventObserver.subscribeToIngestEvents(ingestEvent => this.sendIngestEvent(ingestEvent))
+    this.connectionStateEventObserver.subscribeToConnectionStateEvents(connectionStateEvent => this.broadcastTypedEvent(connectionStateEvent))
   }
 
   private sendIngestEvent(ingestEvent: IngestEvent): void {
@@ -23,6 +27,11 @@ export class ClientEventServer implements EventServer {
     this.queueSubscriptions
       .get(ingestEvent.queueId)
       ?.forEach(clientId => this.clientConnectionServer.sendMessageToClient(clientId, serializedIngestEvent))
+  }
+
+  private broadcastTypedEvent(event: TypedEvent): void {
+    const serializedEvent: string = JSON.stringify(event)
+    this.clientConnectionServer.broadcastMessageToAllClients(serializedEvent)
   }
 
   public async start(port: number): Promise<void> {

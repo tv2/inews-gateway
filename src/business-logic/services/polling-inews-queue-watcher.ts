@@ -1,6 +1,7 @@
 import { InewsQueueWatcher } from '../interfaces/inews-queue-watcher'
 import { InewsClient } from '../interfaces/inews-client'
 import { Logger } from '../../logger/logger'
+import { ConnectionStateEmitter } from '../interfaces/connection-state-emitter'
 
 const POLLING_INTERVAL_IN_MS: number = 5000
 
@@ -10,14 +11,15 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
 
   public constructor(
     private readonly inewsClient: InewsClient,
+    private readonly connectionStateEmitter: ConnectionStateEmitter,
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
   }
 
   public async start(): Promise<void> {
-    // TODO: Listen for iNews client connection status.
-    await this.inewsClient.connect()
+    this.inewsClient.subscribeToConnectionState(connectionState => this.connectionStateEmitter.emitConnectionState(connectionState))
+    await this.inewsClient.connect().catch(error => this.logger.data(error).error(`Failed connecting to iNews server. Reconnect attempt in ${POLLING_INTERVAL_IN_MS}ms.`))
     this.schedulePolling()
   }
 

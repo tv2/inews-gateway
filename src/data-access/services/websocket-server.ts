@@ -45,7 +45,7 @@ export class WebsocketServer implements ClientConnectionServer {
   }
 
   private registerWebsocket(websocket: ws.WebSocket, request: http.IncomingMessage): void {
-    const clientId: string = this.generateclientId()
+    const clientId: string = this.generateClientId()
     try {
       websocket.on('close', () => {
         this.cleanseWebsocket(clientId)
@@ -60,7 +60,7 @@ export class WebsocketServer implements ClientConnectionServer {
     }
   }
 
-  private generateclientId(): string {
+  private generateClientId(): string {
     return process.hrtime.bigint().toString(16)
   }
 
@@ -80,6 +80,10 @@ export class WebsocketServer implements ClientConnectionServer {
       throw new Error(`Received unknown client id '${clientId}' when trying to send message '${message}'.`)
     }
     websocket.send(message)
+  }
+
+  public broadcastMessageToAllClients(message: string | Buffer): void {
+    this.websockets.forEach(websocket => websocket.send(message))
   }
 
   public stop(): void {

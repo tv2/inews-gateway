@@ -10,6 +10,7 @@ import { FtpInewsClient } from '../services/ftp-inews-client'
 import { FtpClientFacade } from '../../data-access/facades/ftp-client-facade'
 import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
 import { InewsFtpTimestampParser } from '../services/inews-ftp-timestamp-parser'
+import { DomainEventFacade } from './domain-event-facade'
 
 export class ServiceFacade {
   public static createApplicationConfigurationService(): ApplicationConfigurationService {
@@ -17,7 +18,7 @@ export class ServiceFacade {
   }
 
   public static createInewsQueueWatcher(): InewsQueueWatcher {
-    return new PollingInewsQueueWatcher(this.createInewsClient(), LoggerFacade.createLogger())
+    return new PollingInewsQueueWatcher(this.createInewsClient(), DomainEventFacade.createConnectionStateEmitter(), LoggerFacade.createLogger())
   }
 
   public static createInewsClient(): InewsClient {

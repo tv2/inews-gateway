@@ -23,27 +23,39 @@ export class BasicFtpFtpClient implements FtpClient {
   public async connect(): Promise<void> {
     try {
       this.onConnectionStatusChangedCallback?.(ConnectionStatus.CONNECTING)
-      await this.ftpClient.access({
-        host: this.configuration.host,
-        port: this.configuration.port,
-        user: this.configuration.user,
-        password: this.configuration.password,
-        secure: false,
-      })
+
+      await this.connectWithConfiguration()
+
       this.onConnectionStatusChangedCallback?.(ConnectionStatus.CONNECTED)
       this.logger.info(`Connected to FTP server ${this.configuration.host}:${this.configuration.port}.`)
-      this.ftpClient.ftp.socket.on('timeout', () => {
-        this.logger.info(`The connection to the FTP server ${this.configuration.host}:${this.configuration.port} timed out.`)
-        this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
-      })
-      this.ftpClient.ftp.socket.on('end', () => {
-        this.logger.info(`FTP server ${this.configuration.host}:${this.configuration.port} terminated the connection.`)
-        this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
-      })
+
+      this.configureFtpSocketToListenForDeadConnection()
     } catch (error) {
       this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
       throw error
     }
+  }
+
+  private async connectWithConfiguration(): Promise<void> {
+    await this.ftpClient.access({
+      host: this.configuration.host,
+      port: this.configuration.port,
+      user: this.configuration.user,
+      password: this.configuration.password,
+      secure: false,
+    })
+  }
+
+  private configureFtpSocketToListenForDeadConnection(): void {
+    this.ftpClient.ftp.socket.on('timeout', () => {
+      this.logger.info(`The connection to the FTP server ${this.configuration.host}:${this.configuration.port} timed out.`)
+      this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+    })
+
+    this.ftpClient.ftp.socket.on('end', () => {
+      this.logger.info(`FTP server ${this.configuration.host}:${this.configuration.port} terminated the connection.`)
+      this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+    })
   }
 
   public isConnected(): boolean {

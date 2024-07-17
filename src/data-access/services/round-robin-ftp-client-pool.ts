@@ -1,6 +1,7 @@
 import { ConnectionStatus } from '../enums/connection-status'
 import { FtpClient } from '../interfaces/ftp-client'
 import { FileMetadata } from '../value-objects/file-metadata'
+import { ConnectionState } from '../value-objects/connection-state'
 
 const MAX_FAILED_OPERATIONS_THRESHOLD: number = 20
 const SUCCESSFUL_OPERATION_WEIGHT: number = 1
@@ -8,7 +9,7 @@ const FAILED_OPERATION_WEIGHT: number = 2
 
 export class RoundRobinFtpClientPool implements FtpClient {
   private connectedFtpClient?: FtpClient
-  private onConnectionStatusChangedCallback?: (connectionStatus: ConnectionStatus) => void
+  private onConnectionStateChangedCallback?: (connectionState: ConnectionState) => void
   private failedOperationsTracker: number = 0
 
   public constructor(private ftpClients: readonly FtpClient[]) {}
@@ -26,25 +27,25 @@ export class RoundRobinFtpClientPool implements FtpClient {
 
   private async getFtpClientByRoundRobin(): Promise<FtpClient> {
     await this.disconnect()
-    this.emitConnectionStatus(ConnectionStatus.CONNECTING)
+    this.emitConnectionState({ status: ConnectionStatus.CONNECTING })
 
     for (const ftpClient of this.ftpClients) {
       try {
         await ftpClient.connect()
-        this.emitConnectionStatus(ConnectionStatus.CONNECTED)
-        ftpClient.setOnConnectionStatusChangedCallback(connectionStatus => this.emitConnectionStatus(connectionStatus))
+        this.emitConnectionState({ status: ConnectionStatus.CONNECTED })
+        ftpClient.setOnConnectionStateChangedCallback(connectionState => this.emitConnectionState(connectionState))
         return ftpClient
       } catch {
-        ftpClient.clearOnConnectionStatusChangedCallback()
+        ftpClient.clearOnConnectionStateChangedCallback()
       }
     }
 
-    this.emitConnectionStatus(ConnectionStatus.DISCONNECTED)
+    this.emitConnectionState({ status: ConnectionStatus.DISCONNECTED, message: 'No available iNews servers.' })
     throw new Error('No available iNews servers.')
   }
 
-  private emitConnectionStatus(connectionStatus: ConnectionStatus): void {
-    this.onConnectionStatusChangedCallback?.(connectionStatus)
+  private emitConnectionState(connectionState: ConnectionState): void {
+    this.onConnectionStateChangedCallback?.(connectionState)
   }
 
   public isConnected(): boolean {
@@ -102,18 +103,18 @@ export class RoundRobinFtpClientPool implements FtpClient {
     })
   }
 
-  public setOnConnectionStatusChangedCallback(onConnectionStatusChangedCallback: (connectionStatus: ConnectionStatus) => void): void {
-    this.onConnectionStatusChangedCallback = onConnectionStatusChangedCallback
+  public setOnConnectionStateChangedCallback(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void {
+    this.onConnectionStateChangedCallback = onConnectionStateChangedCallback
   }
 
-  public clearOnConnectionStatusChangedCallback(): void {
-    delete this.onConnectionStatusChangedCallback
+  public clearOnConnectionStateChangedCallback(): void {
+    delete this.onConnectionStateChangedCallback
   }
 
   public async disconnect(): Promise<void> {
     if (this.connectedFtpClient?.isConnected()) {
       await this.connectedFtpClient?.disconnect()
     }
-    this.connectedFtpClient?.clearOnConnectionStatusChangedCallback()
+    this.connectedFtpClient?.clearOnConnectionStateChangedCallback()
   }
 }

@@ -18,7 +18,7 @@ export class RoundRobinFtpClientPool implements FtpClient {
   }
 
   private async getConnectedFtpClient(): Promise<FtpClient> {
-    if (!this.connectedFtpClient || !this.connectedFtpClient.isConnected()) {
+    if (!this.connectedFtpClient?.isConnected()) {
       this.connectedFtpClient = await this.getFtpClientByRoundRobin()
     }
     return this.connectedFtpClient

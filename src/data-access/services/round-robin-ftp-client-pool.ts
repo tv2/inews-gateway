@@ -27,6 +27,7 @@ export class RoundRobinFtpClientPool implements FtpClient {
   private async getFtpClientByRoundRobin(): Promise<FtpClient> {
     await this.disconnect()
     this.emitConnectionStatus(ConnectionStatus.CONNECTING)
+
     for (const ftpClient of this.ftpClients) {
       try {
         await ftpClient.connect()
@@ -37,6 +38,7 @@ export class RoundRobinFtpClientPool implements FtpClient {
         ftpClient.setOnConnectionStatusChangedCallback(() => {})
       }
     }
+
     this.emitConnectionStatus(ConnectionStatus.DISCONNECTED)
     throw new Error('No available iNews servers.')
   }

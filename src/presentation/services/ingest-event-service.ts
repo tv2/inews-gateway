@@ -15,7 +15,9 @@ export class IngestEventService implements IngestEventEmitter, IngestEventObserv
 
   private readonly callbacks: IngestEventCallback[] = []
 
-  private constructor(private readonly ingestEventBuilder: IngestEventBuilder) {}
+  private constructor(
+    private readonly ingestEventBuilder: IngestEventBuilder
+  ) {}
 
   public emitTestEvent(queueId: string): void {
     this.emitIngestEvent(this.ingestEventBuilder.buildTestEvent(queueId))

@@ -1,11 +1,11 @@
 import { EventServerFacade } from './presentation/facades/event-server-facade'
 import { LoggerFacade } from './logger/logger-facade'
 import { InewsGatewayServer } from './inews-gateway-server'
-
-const EVENT_SERVER_PORT: number = 3008
+import { ServiceFacade } from './business-logic/facades/service-facade'
 
 new InewsGatewayServer(
   EventServerFacade.createWebsocketEventServer(),
+  ServiceFacade.createApplicationConfigurationService(),
 )
-  .start({ eventServerPort: EVENT_SERVER_PORT })
+  .start()
   .catch(LoggerFacade.createLogger().tag('startup').error)

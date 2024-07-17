@@ -19,6 +19,7 @@ describe(InewsFtpTimestampParserImplementation.name, () => {
         expect(result).toBe(expectedTime)
       })
     })
+
     describe('when timestamp is in the future', () => {
       describe('when timestamp is in a future year, but prior month (May 22 3000)', () => {
         it('returns epoch timestamp for the date with the year set to the current year', () => {

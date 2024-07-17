@@ -1,0 +1,31 @@
+import { IngestEventEmitter } from '../interfaces/ingest-event-emitter'
+import { IngestEventObserver } from '../interfaces/ingest-event-observer'
+import { IngestEventBuilder } from '../interfaces/ingest-event-builder'
+import { IngestEvent } from '../value-objects/ingest-event'
+
+export type IngestEventCallback = (ingest: IngestEvent) => void
+
+export class IngestEventService implements IngestEventEmitter, IngestEventObserver {
+  public static instance: IngestEventService
+
+  public static getInstance(ingestEventBuilder: IngestEventBuilder): IngestEventService {
+    this.instance ??= new IngestEventService(ingestEventBuilder)
+    return this.instance
+  }
+
+  private readonly callbacks: IngestEventCallback[] = []
+
+  private constructor(private readonly ingestEventBuilder: IngestEventBuilder) {}
+
+  public emitTestEvent(queueId: string): void {
+    this.emitIngestEvent(this.ingestEventBuilder.buildTestEvent(queueId))
+  }
+
+  private emitIngestEvent(ingestEvent: IngestEvent): void {
+    this.callbacks.forEach(callback => callback(ingestEvent))
+  }
+
+  public subscribeToIngestEvents(onIngestEventCallback: IngestEventCallback): void {
+    this.callbacks.push(onIngestEventCallback)
+  }
+}

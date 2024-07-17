@@ -6,6 +6,7 @@ import { ServiceFacade } from './business-logic/facades/service-facade'
 new InewsGatewayServer(
   EventServerFacade.createWebsocketEventServer(),
   ServiceFacade.createApplicationConfigurationService(),
+  ServiceFacade.createInewsQueueWatcher(),
 )
   .start()
   .catch(LoggerFacade.createLogger().tag('startup').error)

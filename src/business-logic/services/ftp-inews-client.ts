@@ -58,6 +58,6 @@ export class FtpInewsClient implements InewsClient {
 
   public async disconnect(): Promise<void> {
     await this.ftpClient.disconnect()
-    this.ftpClient.setOnConnectionStatusChangedCallback(() => {})
+    this.ftpClient.clearOnConnectionStatusChangedCallback()
   }
 }

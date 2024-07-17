@@ -66,6 +66,10 @@ export class BasicFtpFtpClient implements FtpClient {
     this.onConnectionStatusChangedCallback = onConnectionStatusChangedCallback
   }
 
+  public clearOnConnectionStatusChangedCallback(): void {
+    delete this.onConnectionStatusChangedCallback
+  }
+
   public async changeWorkingDirectory(path: string): Promise<void> {
     await this.ftpClient.cd(path)
   }

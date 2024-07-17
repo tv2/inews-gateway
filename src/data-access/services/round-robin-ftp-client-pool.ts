@@ -35,7 +35,7 @@ export class RoundRobinFtpClientPool implements FtpClient {
         ftpClient.setOnConnectionStatusChangedCallback(connectionStatus => this.emitConnectionStatus(connectionStatus))
         return ftpClient
       } catch {
-        ftpClient.setOnConnectionStatusChangedCallback(() => {})
+        ftpClient.clearOnConnectionStatusChangedCallback()
       }
     }
 
@@ -106,10 +106,14 @@ export class RoundRobinFtpClientPool implements FtpClient {
     this.onConnectionStatusChangedCallback = onConnectionStatusChangedCallback
   }
 
+  public clearOnConnectionStatusChangedCallback(): void {
+    delete this.onConnectionStatusChangedCallback
+  }
+
   public async disconnect(): Promise<void> {
     if (this.connectedFtpClient?.isConnected()) {
       await this.connectedFtpClient?.disconnect()
     }
-    this.connectedFtpClient?.setOnConnectionStatusChangedCallback(() => {})
+    this.connectedFtpClient?.clearOnConnectionStatusChangedCallback()
   }
 }

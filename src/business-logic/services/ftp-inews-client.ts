@@ -1,22 +1,25 @@
-import { ConnectionStatusObserver } from '../interfaces/connection-status-observer'
 import { FtpClient } from '../../data-access/interfaces/ftp-client'
 import { FileMetadata } from '../../data-access/value-objects/file-metadata'
 import { StoryMetadata } from '../value-objects/story-metadata'
 import { InewsClient } from '../interfaces/inews-client'
 import { InewsFtpTimestampParser } from '../interfaces/inews-ftp-timestamp-parser'
+import { ConnectionStatus } from '../../data-access/enums/connection-status'
 
 export class FtpInewsClient implements InewsClient {
+  private readonly onConnectionStatusChangedCallbacks: ((connectionStatus: ConnectionStatus) => void)[] = []
+
   public constructor(
     private readonly ftpClient: FtpClient,
     private readonly inewsTimestampParser: InewsFtpTimestampParser,
-    private readonly connectionStatusObserver: ConnectionStatusObserver,
   ) {}
 
   public async connect(): Promise<void> {
-    this.ftpClient.setOnConnectionStatusChangedCallback((connectionStatus) => {
-      this.connectionStatusObserver.emitConnectionStatus(connectionStatus)
-    })
+    this.ftpClient.setOnConnectionStatusChangedCallback(connectionStatus => this.emitConnectionStatus(connectionStatus))
     await this.ftpClient.connect()
+  }
+
+  private emitConnectionStatus(connectionStatus: ConnectionStatus): void {
+    this.onConnectionStatusChangedCallbacks.forEach(callback => callback(connectionStatus))
   }
 
   public async getStoryMetadataForQueue(queueId: string): Promise<readonly StoryMetadata[]> {
@@ -47,6 +50,10 @@ export class FtpInewsClient implements InewsClient {
 
   private getStoryNameFromFileMetadata(fileMetadata: FileMetadata): string {
     return fileMetadata.name.trim().split(' ').slice(1).join(' ') ?? 'unknown name'
+  }
+
+  public subscribeToConnectionStatus(onConnectionStatusChangedCallback: (connectionStatus: ConnectionStatus) => void): void {
+    this.onConnectionStatusChangedCallbacks.push(onConnectionStatusChangedCallback)
   }
 
   public async disconnect(): Promise<void> {

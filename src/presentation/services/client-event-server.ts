@@ -3,8 +3,9 @@ import { Logger } from '../../logger/logger'
 import { IngestEventObserver } from '../interfaces/ingest-event-observer'
 import { IngestEvent } from '../value-objects/ingest-event'
 import { ClientConnectionServer } from '../../data-access/interfaces/client-connection-server'
+import { EventServer } from '../interfaces/event-server'
 
-export class IngestEventServer {
+export class ClientEventServer implements EventServer {
   private readonly queueSubscriptions: Map<string, Set<string>> = new Map()
   private readonly logger: Logger
 
@@ -71,7 +72,7 @@ export class IngestEventServer {
     this.logger.data([...this.queueSubscriptions.keys()]).debug(`Client with client id '${clientId}' disconnected. ${this.queueSubscriptions.size} queue(s) are still registered.`)
   }
 
-  public stopServer(): void {
+  public stop(): void {
     this.clientConnectionServer.stop()
   }
 }

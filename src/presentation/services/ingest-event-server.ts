@@ -2,7 +2,7 @@ import { ClientConfiguration } from '../value-objects/client-configuration'
 import { Logger } from '../../logger/logger'
 import { IngestEventObserver } from '../interfaces/ingest-event-observer'
 import { IngestEvent } from '../value-objects/ingest-event'
-import { ClientConnectionServer } from '../interfaces/client-connection-server'
+import { ClientConnectionServer } from '../../data-access/interfaces/client-connection-server'
 
 export class IngestEventServer {
   private readonly queueSubscriptions: Map<string, Set<string>> = new Map()

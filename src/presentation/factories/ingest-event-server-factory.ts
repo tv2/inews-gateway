@@ -1,6 +1,6 @@
 import { LoggerFacade } from '../../logger/logger-facade'
 import { IngestEventServer } from '../services/ingest-event-server'
-import { WebsocketServer } from '../services/websocket-server'
+import { WebsocketServer } from '../../data-access/services/websocket-server'
 import { EventEmitterFacade } from '../facades/event-emitter-facade'
 
 export class IngestEventServerFactory {

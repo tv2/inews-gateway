@@ -1,6 +1,8 @@
 import { ConnectionStateEmitter } from '../interfaces/connection-state-emitter'
 import { EventBus } from '../services/event-bus'
 import { ConnectionStateObserver } from '../interfaces/connection-state-observer'
+import { InewsQueuePoolObserver } from '../interfaces/inews-queue-pool-observer'
+import { InewsQueuePoolEmitter } from '../interfaces/inews-queue-pool-emitter'
 
 export class DomainEventFacade {
   private static eventBus: EventBus
@@ -10,6 +12,14 @@ export class DomainEventFacade {
   }
 
   public static createConnectionStateObserver(): ConnectionStateObserver {
+    return this.getEventBus()
+  }
+
+  public static createInewsQueuePoolEmitter(): InewsQueuePoolEmitter {
+    return this.getEventBus()
+  }
+
+  public static createInewsQueuePoolObserver(): InewsQueuePoolObserver {
     return this.getEventBus()
   }
 

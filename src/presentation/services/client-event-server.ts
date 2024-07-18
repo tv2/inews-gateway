@@ -6,6 +6,7 @@ import { ClientConnectionServer } from '../interfaces/client-connection-server'
 import { EventServer } from '../interfaces/event-server'
 import { ConnectionStateEventObserver } from '../interfaces/connection-state-event-observer'
 import { TypedEvent } from '../value-objects/typed-event'
+import { InewsQueuePoolEmitter } from '../../business-logic/interfaces/inews-queue-pool-emitter'
 
 export class ClientEventServer implements EventServer {
   private readonly queueSubscriptions: Map<string, Set<string>> = new Map()
@@ -15,6 +16,7 @@ export class ClientEventServer implements EventServer {
     private readonly clientConnectionServer: ClientConnectionServer,
     private readonly ingestEventObserver: IngestEventObserver,
     private readonly connectionStateEventObserver: ConnectionStateEventObserver,
+    private readonly inewsQueuePoolEmitter: InewsQueuePoolEmitter,
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
@@ -43,7 +45,8 @@ export class ClientEventServer implements EventServer {
     const clientConfiguration: ClientConfiguration = this.getClientConfiguration(options)
     this.registerClientToQueues(clientId, clientConfiguration.queueIds)
     this.logger.data(clientConfiguration).debug(`Client with client id '${clientId}' is registered with ${clientConfiguration.queueIds.length} queue(s).`)
-    this.logger.data([...this.queueSubscriptions.keys()]).debug(`${this.queueSubscriptions.size} queue(s) are registered.`)
+    this.logger.data(this.getInewsQueuePool()).debug(`${this.queueSubscriptions.size} queue(s) are registered.`)
+    this.emitInewsQueuePool()
   }
 
   private getClientConfiguration(options: Record<string, unknown>): ClientConfiguration {
@@ -70,6 +73,14 @@ export class ClientEventServer implements EventServer {
     this.queueSubscriptions.set(queueId, clientIds)
   }
 
+  private emitInewsQueuePool(): void {
+    this.inewsQueuePoolEmitter.emitQueuePool(this.getInewsQueuePool())
+  }
+
+  private getInewsQueuePool(): string[] {
+    return Array.from(this.queueSubscriptions.keys())
+  }
+
   private deregisterClient(clientId: string): void {
     this.queueSubscriptions.forEach((clientIds: Set<string>, queueId: string) => {
       clientIds.delete(clientId)
@@ -77,7 +88,8 @@ export class ClientEventServer implements EventServer {
         this.queueSubscriptions.delete(queueId)
       }
     })
-    this.logger.data([...this.queueSubscriptions.keys()]).debug(`Client with client id '${clientId}' disconnected. ${this.queueSubscriptions.size} queue(s) are still registered.`)
+    this.logger.data(this.getInewsQueuePool()).debug(`Client with client id '${clientId}' disconnected. ${this.queueSubscriptions.size} queue(s) are still registered.`)
+    this.emitInewsQueuePool()
   }
 
   public stop(): void {

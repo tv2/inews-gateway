@@ -3,13 +3,13 @@ import { InewsClient } from '../interfaces/inews-client'
 import { Logger } from '../../logger/logger'
 import { ConnectionStateEmitter } from '../interfaces/connection-state-emitter'
 
-const POLLING_INTERVAL_IN_MS: number = 5000
 
 export class PollingInewsQueueWatcher implements InewsQueueWatcher {
   private pollingTimer?: NodeJS.Timeout
   private readonly logger: Logger
 
   public constructor(
+    private readonly pollingIntervalInMs: number,
     private readonly inewsClient: InewsClient,
     private readonly connectionStateEmitter: ConnectionStateEmitter,
     logger: Logger,
@@ -19,7 +19,7 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
 
   public async start(): Promise<void> {
     this.inewsClient.subscribeToConnectionState(connectionState => this.connectionStateEmitter.emitConnectionState(connectionState))
-    await this.inewsClient.connect().catch(error => this.logger.data(error).error(`Failed connecting to iNews server. Reconnect attempt in ${POLLING_INTERVAL_IN_MS}ms.`))
+    await this.inewsClient.connect().catch(error => this.logger.data(error).error(`Failed connecting to iNews server. Reconnect attempt in ${this.pollingIntervalInMs}ms.`))
     this.schedulePolling()
   }
 
@@ -27,7 +27,7 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
     this.clearPollingTimer()
     this.pollData()
       .catch(error => this.logger.data(error).warn('Failed polling data.'))
-      .finally(() => this.pollingTimer = setTimeout(() => this.schedulePolling(), POLLING_INTERVAL_IN_MS))
+      .finally(() => this.pollingTimer = setTimeout(() => this.schedulePolling(), this.pollingIntervalInMs))
   }
 
   private async pollData(): Promise<void> {

@@ -18,7 +18,8 @@ export class ServiceFacade {
   }
 
   public static createInewsQueueWatcher(): InewsQueueWatcher {
-    return new PollingInewsQueueWatcher(this.createInewsClient(), DomainEventFacade.createConnectionStateEmitter(), LoggerFacade.createLogger())
+    const applicationConfiguration: ApplicationConfiguration = this.createApplicationConfigurationService().getApplicationConfiguration()
+    return new PollingInewsQueueWatcher(applicationConfiguration.inewsPollingIntervalInMs, this.createInewsClient(), DomainEventFacade.createConnectionStateEmitter(), LoggerFacade.createLogger())
   }
 
   public static createInewsClient(): InewsClient {

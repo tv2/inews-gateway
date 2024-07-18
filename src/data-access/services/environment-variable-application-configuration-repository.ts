@@ -6,6 +6,7 @@ export class EnvironmentVariableApplicationConfigurationRepository implements Ap
   public getApplicationConfiguration(): ApplicationConfiguration {
     return {
       inewsFtpConnectionConfigurations: this.getFtpConnectionConfigurations(),
+      inewsPollingIntervalInMs: this.parseInteger(process.env.INEWS_POLLING_INTERVAL_IN_MS ?? '', 2000),
       eventServerPort: this.parseInteger(process.env.EVENT_SERVER_PORT ?? '', 3008),
     }
   }

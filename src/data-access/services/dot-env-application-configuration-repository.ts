@@ -1,9 +1,11 @@
 import { ApplicationConfigurationRepository } from '../interfaces/application-configuration-repository'
 import { ApplicationConfiguration } from '../value-objects/application-configuration'
 import { FtpConnectionConfiguration } from '../value-objects/ftp-connection-configuration'
+import * as dotenv from 'dotenv'
 
-export class EnvironmentVariableApplicationConfigurationRepository implements ApplicationConfigurationRepository {
+export class DotEnvApplicationConfigurationRepository implements ApplicationConfigurationRepository {
   public getApplicationConfiguration(): ApplicationConfiguration {
+    dotenv.config()
     return {
       inewsFtpConnectionConfigurations: this.getFtpConnectionConfigurations(),
       inewsPollingIntervalInMs: this.parseInteger(process.env.INEWS_POLLING_INTERVAL_IN_MS ?? '', 2000),

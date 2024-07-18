@@ -3,7 +3,6 @@ import { InewsClient } from '../interfaces/inews-client'
 import { Logger } from '../../logger/logger'
 import { ConnectionStateEmitter } from '../interfaces/connection-state-emitter'
 
-
 export class PollingInewsQueueWatcher implements InewsQueueWatcher {
   private pollingTimer?: NodeJS.Timeout
   private readonly logger: Logger

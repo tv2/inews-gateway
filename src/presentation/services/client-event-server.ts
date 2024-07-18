@@ -30,8 +30,7 @@ export class ClientEventServer implements EventServer {
   }
 
   private broadcastTypedEvent(event: TypedEvent): void {
-    const serializedEvent: string = JSON.stringify(event)
-    this.clientConnectionServer.broadcastMessageToAllClients(serializedEvent)
+    this.clientConnectionServer.broadcastMessageToAllClients(JSON.stringify(event))
   }
 
   public async start(port: number): Promise<void> {

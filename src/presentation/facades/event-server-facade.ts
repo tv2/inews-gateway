@@ -1,6 +1,6 @@
 import { LoggerFacade } from '../../logger/logger-facade'
 import { ClientEventServer } from '../services/client-event-server'
-import { WebsocketServer } from '../../data-access/services/websocket-server'
+import { WebsocketServer } from '../services/websocket-server'
 import { EventEmitterFacade } from './event-emitter-facade'
 import { EventServer } from '../interfaces/event-server'
 

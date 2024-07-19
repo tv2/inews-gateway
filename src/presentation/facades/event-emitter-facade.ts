@@ -1,5 +1,5 @@
 import { IngestEventEmitter } from '../interfaces/ingest-event-emitter'
-import { IngestEventService } from '../emitters/ingest-event-service'
+import { IngestEventService } from '../services/ingest-event-service'
 import { EventBuilderFacade } from './event-builder-facade'
 import { IngestEventObserver } from '../interfaces/ingest-event-observer'
 

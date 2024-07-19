@@ -1,15 +1,15 @@
-import { IngestEventServer } from './presentation/services/ingest-event-server'
+import { EventServer } from './presentation/interfaces/event-server'
 
 export interface InewsGatewayServerConfiguration {
-  ingestEventServerPort: number
+  eventServerPort: number
 }
 
 export class InewsGatewayServer {
   public constructor(
-    private readonly ingestEventServer: IngestEventServer,
+    private readonly eventServer: EventServer,
   ) {}
 
   public async start(configuration: InewsGatewayServerConfiguration): Promise<void> {
-    await this.ingestEventServer.start(configuration.ingestEventServerPort)
+    await this.eventServer.start(configuration.eventServerPort)
   }
 }

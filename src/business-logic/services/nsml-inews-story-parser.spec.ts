@@ -7,7 +7,7 @@ describe(NsmlInewsStoryParser.name, () => {
   describe(NsmlInewsStoryParser.prototype.parseInewsStory.name, () => {
     describe('when fields with non-alphanumeric ids are present', () => {
       it('converts the field ids to camelCase', () => {
-        const text: string = '<nsml version="some version 1.0"><head><storyid>001ea938:00ff8cf0:656994ba</storyid></head><story><fields><f id=my-weird-key-name>some value</f></fields></story>'
+        const text: string = '<nsml version="some version 1.0"><head><storyid>001ea938:00ff8cf0:656994ba</storyid></head><story><fields><f id=title></f><f id=my-weird-key-name>some value</f></fields></story>'
         const testee: InewsStoryParser = createTestee()
 
         const result: InewsStory = testee.parseInewsStory(text, 'queue-id')
@@ -23,7 +23,7 @@ describe(NsmlInewsStoryParser.name, () => {
       const text: string = '<nsml version="some version 1.0"><head><storyid>001ea938:00ff8cf0:656994ba</storyid></head><story><fields><f id=title>Segment title</f></fields></fields><body><p><pi>KAM 1</pi></p><p><a idref=0></p><p><a idref=1></p></body><aeset><ae id=0><ap>Line1</ap><ap>Line2</ap></ae><ae id=1><ap>Line3</ap><ap>Line4</ap></ae></aeset></aeset></story>'
       const testee: InewsStoryParser = createTestee()
       const expectedInewsStory: InewsStory = {
-        id: 'story-id',
+        id: '001ea938',
         name: 'Segment title',
         queueId: 'queue-id',
         metadata: {},

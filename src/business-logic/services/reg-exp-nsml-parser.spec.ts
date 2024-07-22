@@ -5,7 +5,7 @@ import { NsmlDocument, NsmlParagraphType } from '../value-objects/nsml-document'
 describe(RegExpNsmlParser.name, () => {
   describe('when nsml document has no anchored elements', () => {
     it('returns document with empty anchored elements list', () => {
-      const text: string = '<nsml version="some version 1.0"><head><storyid>storyid</storyid></head><story><fields></fields><body><p><cc>Some comment</cc></p><p><pi>Camera 1</pi></pi></p></body></story>'
+      const text: string = '<nsml version="some version 1.0"><head><storyid>storyid</storyid></head><story><fields><f id=title></f></fields><body><p><cc>Some comment</cc></p><p><pi>Camera 1</pi></pi></p></body></story>'
       const testee: NsmlParser = createTestee()
 
       const result: NsmlDocument = testee.parseNsmlDocument(text)

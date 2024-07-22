@@ -27,6 +27,7 @@
     "@types/jest": "^29.5.12",
     "@types/license-checker": "^25",
     "@types/node": "^20.12.8",
+    "@types/ws": "^8.5.11",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "@typescript-eslint/parser": "^7.8.0",
     "@typestrong/ts-mockito": "^2.6.6",
@@ -42,7 +43,6 @@
   },
   "dependencies": {
     "@tv2media/logger": "^2.0.2",
-    "@types/ws": "^8.5.10",
     "basic-ftp": "^5.0.5",
     "dotenv": "^16.4.5",
     "html-entities": "^2.5.2",

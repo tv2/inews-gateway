@@ -33,11 +33,14 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
       .finally(() => this.pollingTimer = setTimeout(() => this.schedulePolling(), this.pollingIntervalInMs))
   }
 
-  private pollData(): Promise<void> {
+  private async pollData(): Promise<void> {
     for (const queueId of this.queueIds) {
-      this.logger.info(`Polling for queue with id '${queueId}'.`)
+      const storyId: string | undefined = (await this.inewsClient.getStoryMetadataForQueue(queueId))[0]?.id
+      if (!storyId) {
+        continue
+      }
+      console.log(JSON.stringify(await this.inewsClient.getStory(queueId, storyId), null, 4))
     }
-    return Promise.resolve()
   }
 
   private clearPollingTimer(): void {

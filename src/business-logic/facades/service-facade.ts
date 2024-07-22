@@ -11,6 +11,8 @@ import { FtpClientFacade } from '../../data-access/facades/ftp-client-facade'
 import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
 import { InewsFtpTimestampParser } from '../services/inews-ftp-timestamp-parser'
 import { DomainEventFacade } from './domain-event-facade'
+import { InewsStoryParser } from '../interfaces/inews-story-parser'
+import { NsmlInewsStoryParser } from '../services/nsml-inews-story-parser'
 
 export class ServiceFacade {
   public static createApplicationConfigurationService(): ApplicationConfigurationService {
@@ -30,7 +32,11 @@ export class ServiceFacade {
 
   public static createInewsClient(): InewsClient {
     const applicationConfiguration: ApplicationConfiguration = this.createApplicationConfigurationService().getApplicationConfiguration()
-    return new FtpInewsClient(FtpClientFacade.createRoundRobinFtpClientPool(applicationConfiguration.inewsFtpConnectionConfigurations), this.createInewsTimestampParser())
+    return new FtpInewsClient(FtpClientFacade.createRoundRobinFtpClientPool(applicationConfiguration.inewsFtpConnectionConfigurations), this.createInewsTimestampParser(), this.createInewsStoryParser())
+  }
+
+  public static createInewsStoryParser(): InewsStoryParser {
+    return new NsmlInewsStoryParser()
   }
 
   public static createInewsTimestampParser(): InewsTimestampParser {

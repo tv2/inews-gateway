@@ -4,6 +4,8 @@ import { StoryMetadata } from '../value-objects/story-metadata'
 import { InewsClient } from '../interfaces/inews-client'
 import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
 import { ConnectionState } from '../../data-access/value-objects/connection-state'
+import { InewsStoryParser } from '../interfaces/inews-story-parser'
+import { InewsStory } from '../entities/inews-story'
 
 export class FtpInewsClient implements InewsClient {
   private readonly onConnectionStateChangedCallbacks: ((connectionState: ConnectionState) => void)[] = []
@@ -11,6 +13,7 @@ export class FtpInewsClient implements InewsClient {
   public constructor(
     private readonly ftpClient: FtpClient,
     private readonly inewsTimestampParser: InewsTimestampParser,
+    private readonly inewsStoryParser: InewsStoryParser,
   ) {}
 
   public async connect(): Promise<void> {
@@ -39,9 +42,9 @@ export class FtpInewsClient implements InewsClient {
     await this.ftpClient.changeWorkingDirectory(path)
   }
 
-  public async getStory(queueId: string, storyId: string): Promise<unknown> {
+  public async getStory(queueId: string, storyId: string): Promise<InewsStory> {
     await this.setWorkingDirectory(queueId)
-    return this.ftpClient.getFile(storyId)
+    return this.inewsStoryParser.parseInewsStory(await this.ftpClient.getFile(storyId), queueId, storyId)
   }
 
   private getStoryIdFromFileMetadata(fileMetadata: FileMetadata): string {

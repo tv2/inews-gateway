@@ -1,5 +1,5 @@
-import { ApplicationConfigurationService } from '../interfaces/application-configuration-service'
-import { ApplicationConfigurationRepositoryService } from '../services/application-configuration-repository-service'
+import { ConfigurationService } from '../interfaces/configuration-service'
+import { ApplicationConfigurationService } from '../services/application-configuration-service'
 import { RepositoryFacade } from '../../data-access/facades/repository-facade'
 import { InewsQueueWatcher } from '../interfaces/inews-queue-watcher'
 import { PollingInewsQueueWatcher } from '../services/polling-inews-queue-watcher'
@@ -13,8 +13,8 @@ import { InewsFtpTimestampParser } from '../services/inews-ftp-timestamp-parser'
 import { DomainEventFacade } from './domain-event-facade'
 
 export class ServiceFacade {
-  public static createApplicationConfigurationService(): ApplicationConfigurationService {
-    return new ApplicationConfigurationRepositoryService(RepositoryFacade.createApplicationConfigurationRepository())
+  public static createApplicationConfigurationService(): ConfigurationService<ApplicationConfiguration> {
+    return new ApplicationConfigurationService(RepositoryFacade.createApplicationConfigurationRepository())
   }
 
   public static createInewsQueueWatcher(): InewsQueueWatcher {

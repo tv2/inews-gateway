@@ -1,12 +1,12 @@
 import { EventServer } from './presentation/interfaces/event-server'
-import { ApplicationConfigurationService } from './business-logic/interfaces/application-configuration-service'
+import { ConfigurationService } from './business-logic/interfaces/configuration-service'
 import { ApplicationConfiguration } from './data-access/value-objects/application-configuration'
 import { InewsQueueWatcher } from './business-logic/interfaces/inews-queue-watcher'
 
 export class InewsGatewayServer {
   public constructor(
     private readonly eventServer: EventServer,
-    private readonly applicationConfigurationService: ApplicationConfigurationService,
+    private readonly applicationConfigurationService: ConfigurationService<ApplicationConfiguration>,
     private readonly inewsQueueWatcher: InewsQueueWatcher,
   ) {}
 

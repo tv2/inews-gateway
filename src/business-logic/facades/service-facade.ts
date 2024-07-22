@@ -13,6 +13,7 @@ import { InewsFtpTimestampParser } from '../services/inews-ftp-timestamp-parser'
 import { DomainEventFacade } from './domain-event-facade'
 import { InewsStoryParser } from '../interfaces/inews-story-parser'
 import { NsmlInewsStoryParser } from '../services/nsml-inews-story-parser'
+import { RegExpNsmlParser } from '../services/reg-exp-nsml-parser'
 
 export class ServiceFacade {
   public static createApplicationConfigurationService(): ApplicationConfigurationService {
@@ -36,7 +37,7 @@ export class ServiceFacade {
   }
 
   public static createInewsStoryParser(): InewsStoryParser {
-    return new NsmlInewsStoryParser()
+    return new NsmlInewsStoryParser(new RegExpNsmlParser())
   }
 
   public static createInewsTimestampParser(): InewsTimestampParser {

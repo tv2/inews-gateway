@@ -1,19 +1,37 @@
 import { InewsStoryParser } from '../interfaces/inews-story-parser'
 import { CueType, InewsCue, InewsStory } from '../entities/inews-story'
 import { NsmlAnchoredElement, NsmlParagraph, NsmlParagraphType } from '../value-objects/nsml-document'
-import { NsmlParser } from './nsml-parser'
+import { NsmlParser } from '../interfaces/nsml-parser'
 
 export class NsmlInewsStoryParser implements InewsStoryParser {
+  public constructor(private readonly nsmlParser: NsmlParser) {}
+
   public parseInewsStory(text: string, queueId: string, storyId: string): InewsStory {
-    const nsmlParser = new NsmlParser()
-    const nsmlDocument = nsmlParser.parseNsmlDocument(text)
+    const nsmlDocument = this.nsmlParser.parseNsmlDocument(text)
     return {
       id: storyId,
       queueId,
-      name: nsmlDocument.fields.title ?? 'Unnamed story',
-      metadata: nsmlDocument.fields,
-      cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements)
+      metadata: this.formatMetadata(nsmlDocument.fields),
+      cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements),
     }
+  }
+
+  private formatMetadata(record: Record<string, string>): Record<string, string> {
+    return Object.fromEntries(
+      Object.entries(record)
+        .filter(([, value]) => value)
+        .map(([key, value]) => [this.formatAsCamelCase(key), value]),
+    )
+  }
+
+  private formatAsCamelCase(text: string): string {
+    const fragments: string[] = text.split(/[-_. ]/g)
+    const capitalizedFragments: string[] = fragments.slice(1).map(fragment => this.capitalize(fragment))
+    return `${fragments[0]}${capitalizedFragments.join('')}`
+  }
+
+  private capitalize(text: string): string {
+    return text.charAt(0).toUpperCase() + text.slice(1)
   }
 
   private mergeIntoCues(paragraphs: readonly NsmlParagraph[], cues: Readonly<Record<string, NsmlAnchoredElement>>): InewsCue[] {
@@ -38,11 +56,6 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
           return {
             type: CueType.CONTENT,
             content: cues[paragraph.cueId] ?? [],
-          }
-        case NsmlParagraphType.INVALID:
-          return {
-            type: CueType.INVALID,
-            content: [paragraph.text],
           }
       }
     })

@@ -13,7 +13,6 @@ export type NsmlParagraph =
   | NsmlCommentParagraph
   | NsmlManusParagraph
   | NsmlAnchoredElementParagraph
-  | NsmlInvalidParagraph
 
 export interface NsmlTextParagraph {
   readonly type: NsmlParagraphType.TEXT
@@ -30,11 +29,6 @@ export interface NsmlManusParagraph {
   readonly text: string
 }
 
-export interface NsmlInvalidParagraph {
-  readonly type: NsmlParagraphType.INVALID,
-  readonly text: string
-}
-
 export interface NsmlAnchoredElementParagraph {
   readonly type: NsmlParagraphType.CUE_REFERENCE
   readonly cueId: string
@@ -45,7 +39,6 @@ export enum NsmlParagraphType {
   COMMENT = 'COMMENT',
   MANUS = 'MANUS',
   TEXT = 'TEXT',
-  INVALID = 'INVALID'
 }
 
 export type NsmlAnchoredElement = readonly string[]

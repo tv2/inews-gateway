@@ -1,16 +1,19 @@
 import { NsmlAnchoredElement, NsmlDocument, NsmlParagraph, NsmlParagraphType } from '../value-objects/nsml-document'
 import { decode } from 'html-entities'
+import { NsmlParser } from '../interfaces/nsml-parser'
 
-export class NsmlParser {
+const HIDDEN_PARAGRAPH_PATTERN: RegExp = /]] S3.0 G 0 \[\[/
+
+export class RegExpNsmlParser implements NsmlParser {
   public parseNsmlDocument(text: string): NsmlDocument {
     const version: string = this.parseNsmlVersion(text)
-    const storyId: string = this.parseStoryId(text)
-    const fields: Record<string, string> = this.parseFields(text)
-    const body: NsmlParagraph[] = this.parseBody(text)
-    const anchoredElements: Record<string, NsmlAnchoredElement> = this.parseAnchoredElements(text)
+    const head: Readonly<Record<string, string>> = this.parseHead(text)
+    const fields: Readonly<Record<string, string>> = this.parseFields(text)
+    const body: readonly NsmlParagraph[] = this.parseBody(text)
+    const anchoredElements: Readonly<Record<string, NsmlAnchoredElement>> = this.parseAnchoredElements(text)
     return {
       version,
-      head: { storyId },
+      head,
       fields,
       body,
       anchoredElements,
@@ -26,22 +29,23 @@ export class NsmlParser {
     return match.version
   }
 
-  private parseStoryId(text: string): string {
+  private parseHead(text: string): Readonly<Record<string, string>> {
     const headTagPattern: RegExp = /<head>\s*(?<content>.+)\s*<\/head>/is
     const headContent: string = headTagPattern.exec(text)?.groups?.content ?? ''
-    if (!headContent) {
-      throw new Error('Expected head tag.')
-    }
 
-    const storyIdPattern: RegExp = /<storyid>(?<id>.+)<\/storyid>/is
-    const storyId: string = storyIdPattern.exec(text)?.groups?.id ?? ''
-    if (!storyId) {
-      throw new Error('Expected storyid tag in head tag.')
-    }
-    return storyId
+    const headFieldTagPattern: RegExp = /<(?<key>\w+)>\s*(?<value>.+?)\s*<\/\w+>/gis
+    return Object.fromEntries(
+      Array.from(
+        headContent
+          .replaceAll(/<(meta) (.*)>/g, '<$1 $2/>')
+          .matchAll(headFieldTagPattern),
+      )
+        .map(match => match.groups as { key: string, value: string })
+        .map(entry => [entry.key, entry.value]),
+    )
   }
 
-  private parseFields(text: string): Record<string, string> {
+  private parseFields(text: string): Readonly<Record<string, string>> {
     const fieldTagPattern: RegExp = /<fields>\s*(?<content>.*)\s*<\/fields>/is
     const fieldsText: string = fieldTagPattern.exec(text)?.groups?.content ?? ''
 
@@ -53,14 +57,15 @@ export class NsmlParser {
     )
   }
 
-  private parseBody(text: string): NsmlParagraph[] {
+  private parseBody(text: string): readonly NsmlParagraph[] {
     const bodyTagPattern: RegExp = /<body>\s*(?<content>.+)<\/body>/is
     const bodyText: string = bodyTagPattern.exec(text)?.groups?.content ?? ''
 
-    const paragraphTagPattern: RegExp = /<paragraph>\s*(?<content>.*?)<\/paragraph>/gis
+    const paragraphTagPattern: RegExp = /<p>\s*(?<content>.*?)\s*<\/p>/gis
     return Array.from(bodyText.matchAll(paragraphTagPattern))
       .map(paragraphMatch => paragraphMatch.groups!.content!)
       .map(paragraphText => this.parseParagraph(paragraphText))
+      .filter(paragraph => this.hasParagraphContent(paragraph))
   }
 
   private parseParagraph(paragraphText: string): NsmlParagraph {
@@ -74,11 +79,11 @@ export class NsmlParser {
       }
     }
 
-    const comment: string | undefined = paragraph.comment?.trim()
-    if (comment) {
+    const cueId: string | undefined = paragraph.cueId?.trim()
+    if (cueId) {
       return {
-        type: NsmlParagraphType.COMMENT,
-        text: comment,
+        type: NsmlParagraphType.CUE_REFERENCE,
+        cueId,
       }
     }
 
@@ -90,13 +95,18 @@ export class NsmlParser {
       }
     }
 
+    const comment: string = paragraph.comment?.trim() ?? paragraphText.trim()
     return {
-      type: NsmlParagraphType.INVALID,
-      text: paragraphText,
+      type: NsmlParagraphType.COMMENT,
+      text: comment,
     }
   }
 
-  private parseAnchoredElements(text: string): Record<string, NsmlAnchoredElement> {
+  private hasParagraphContent(paragraph: NsmlParagraph): boolean {
+    return paragraph.type !== NsmlParagraphType.COMMENT || paragraph.text !== ''
+  }
+
+  private parseAnchoredElements(text: string): Readonly<Record<string, NsmlAnchoredElement>> {
     const anchoredElementSetTagPattern: RegExp = /<aeset>\s*(?<content>.*?)\s*<\/aeset>/is
     const anchoredElementSetText: string = anchoredElementSetTagPattern.exec(text)?.groups?.content ?? ''
 
@@ -109,9 +119,9 @@ export class NsmlParser {
   }
 
   private parseAnchoredElement(anchoredElementText: string): NsmlAnchoredElement {
-    const anchoredElementParagraphPattern: RegExp = /<ap>(<?content>.*?)<\/ap>/gis
+    const anchoredElementParagraphPattern: RegExp = /<ap>(?<content>.*?)<\/ap>/gis
     return Array.from(anchoredElementText.matchAll(anchoredElementParagraphPattern))
       .map(match => match.groups!.content!)
-      .filter(paragraph => paragraph !== ']] S3.0 G 0 [[')
+      .filter(paragraph => !HIDDEN_PARAGRAPH_PATTERN.test(paragraph))
   }
 }

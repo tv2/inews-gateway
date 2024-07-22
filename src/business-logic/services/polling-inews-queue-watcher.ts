@@ -39,10 +39,10 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
     const startTime: [number, number] = process.hrtime()
     for (const queueId of this.queueIds) {
       const changedStories: readonly InewsStory[] = await this.fetchChangedStoriesForQueue(queueId)
-      this.logger.debug(`${queueId} has ${changedStories.length} changed stories`)
+      this.logger.debug(`${queueId} has ${changedStories.length} changed stories.`)
     }
     const diff: [number, number] = process.hrtime(startTime)
-    this.logger.debug(`Pulling all queues took ${diff[0] * 1000 + diff[1] / 1_000_000}ms.`)
+    this.logger.debug(`Pulling changes for ${this.queueIds.length} queues took ${diff[0] * 1000 + diff[1] / 1_000_000}ms.`)
   }
 
   private storyMetadataCache: Record<string, InewsStoryMetadata> = {}

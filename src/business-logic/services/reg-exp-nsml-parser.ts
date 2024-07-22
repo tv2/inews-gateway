@@ -1,4 +1,10 @@
-import { NsmlAnchoredElement, NsmlDocument, NsmlParagraph, NsmlParagraphType } from '../value-objects/nsml-document'
+import {
+  NsmlAnchoredElement,
+  NsmlDocument, NsmlFields,
+  NsmlHead,
+  NsmlParagraph,
+  NsmlParagraphType,
+} from '../value-objects/nsml-document'
 import { decode } from 'html-entities'
 import { NsmlParser } from '../interfaces/nsml-parser'
 
@@ -7,8 +13,8 @@ const HIDDEN_PARAGRAPH_PATTERN: RegExp = /]] S3.0 G 0 \[\[/
 export class RegExpNsmlParser implements NsmlParser {
   public parseNsmlDocument(text: string): NsmlDocument {
     const version: string = this.parseNsmlVersion(text)
-    const head: Readonly<Record<string, string>> = this.parseHead(text)
-    const fields: Readonly<Record<string, string>> = this.parseFields(text)
+    const head: NsmlHead = this.parseHead(text)
+    const fields: NsmlFields = this.parseFields(text)
     const body: readonly NsmlParagraph[] = this.parseBody(text)
     const anchoredElements: Readonly<Record<string, NsmlAnchoredElement>> = this.parseAnchoredElements(text)
     return {
@@ -29,12 +35,12 @@ export class RegExpNsmlParser implements NsmlParser {
     return match.version
   }
 
-  private parseHead(text: string): Readonly<Record<string, string>> {
+  private parseHead(text: string): NsmlHead {
     const headTagPattern: RegExp = /<head>\s*(?<content>.+)\s*<\/head>/is
     const headContent: string = headTagPattern.exec(text)?.groups?.content ?? ''
 
     const headFieldTagPattern: RegExp = /<(?<key>\w+)>\s*(?<value>.+?)\s*<\/\w+>/gis
-    return Object.fromEntries(
+    const head: Partial<NsmlHead> = Object.fromEntries(
       Array.from(
         headContent
           .replaceAll(/<(meta) (.*)>/g, '<$1 $2/>')
@@ -43,18 +49,34 @@ export class RegExpNsmlParser implements NsmlParser {
         .map(match => match.groups as { key: string, value: string })
         .map(entry => [entry.key, entry.value]),
     )
+    this.assertRequiredKeysForNsmlHead(head)
+    return head
   }
 
-  private parseFields(text: string): Readonly<Record<string, string>> {
+  private assertRequiredKeysForNsmlHead(head: Partial<NsmlHead>): asserts head is NsmlHead {
+    if (!('storyid' in head)) {
+      throw new Error('Expected storyid in head tag.')
+    }
+  }
+
+  private parseFields(text: string): NsmlFields {
     const fieldTagPattern: RegExp = /<fields>\s*(?<content>.*)\s*<\/fields>/is
     const fieldsText: string = fieldTagPattern.exec(text)?.groups?.content ?? ''
 
     const fieldPattern: RegExp = /<f\s+id=(?<key>.+?)>(?<value>.*?)<\/f>/gis
-    return Object.fromEntries(
+    const fields: Partial<NsmlFields> = Object.fromEntries(
       Array.from(fieldsText.matchAll(fieldPattern))
         .map(fieldMatch => fieldMatch.groups as { key: string, value: string })
         .map(field => [field.key, decode(field.value)]),
     )
+    this.assertRequiredKeysForNsmlFields(fields)
+    return fields
+  }
+
+  private assertRequiredKeysForNsmlFields(fields: Partial<NsmlFields>): asserts fields is NsmlFields {
+    if (!('title' in fields)) {
+      throw new Error('Expected title field.')
+    }
   }
 
   private parseBody(text: string): readonly NsmlParagraph[] {
@@ -72,7 +94,7 @@ export class RegExpNsmlParser implements NsmlParser {
     const paragraphPattern: RegExp = /(<pi>(?<cueText>.*?)<\/pi>)|(<cc>(?<comment>.*?)<\/cc>)|(<a idref=(?<cueId>\d+)>)|(?<manusText>.+)/gis
     const paragraph: { cueText?: string, comment?: string, cueId?: string, manusText?: string } = paragraphPattern.exec(paragraphText)?.groups ?? {}
     const cueText: string | undefined = paragraph.cueText?.trim()
-    if (cueText) {
+    if (cueText !== undefined) {
       return {
         type: NsmlParagraphType.TEXT,
         text: cueText,
@@ -94,7 +116,6 @@ export class RegExpNsmlParser implements NsmlParser {
         text: manusText,
       }
     }
-
     const comment: string = paragraph.comment?.trim() ?? paragraphText.trim()
     return {
       type: NsmlParagraphType.COMMENT,

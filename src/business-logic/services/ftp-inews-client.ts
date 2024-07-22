@@ -1,6 +1,6 @@
 import { FtpClient } from '../../data-access/interfaces/ftp-client'
 import { FileMetadata } from '../../data-access/value-objects/file-metadata'
-import { StoryMetadata } from '../value-objects/story-metadata'
+import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 import { InewsClient } from '../interfaces/inews-client'
 import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
 import { ConnectionState } from '../../data-access/value-objects/connection-state'
@@ -25,7 +25,7 @@ export class FtpInewsClient implements InewsClient {
     this.onConnectionStateChangedCallbacks.forEach(callback => callback(connectionState))
   }
 
-  public async getStoryMetadataForQueue(queueId: string): Promise<readonly StoryMetadata[]> {
+  public async getStoryMetadataForQueue(queueId: string): Promise<readonly InewsStoryMetadata[]> {
     await this.setWorkingDirectory(queueId)
     const fileMetadataCollection: readonly FileMetadata[] = await this.ftpClient.listFiles()
     return fileMetadataCollection
@@ -33,6 +33,7 @@ export class FtpInewsClient implements InewsClient {
       .map(fileMetadata => ({
         id: this.getStoryIdFromFileMetadata(fileMetadata),
         name: this.getStoryNameFromFileMetadata(fileMetadata),
+        locator: this.getStoryLocatorFromFileMetadata(fileMetadata),
         modifiedAtEpochTime: this.inewsTimestampParser.parseInewsFtpTimestamp(fileMetadata.modifiedAt),
       }))
   }
@@ -44,7 +45,7 @@ export class FtpInewsClient implements InewsClient {
 
   public async getStory(queueId: string, storyId: string): Promise<InewsStory> {
     await this.setWorkingDirectory(queueId)
-    return this.inewsStoryParser.parseInewsStory(await this.ftpClient.getFile(storyId), queueId, storyId)
+    return this.inewsStoryParser.parseInewsStory(await this.ftpClient.getFile(storyId), queueId)
   }
 
   private getStoryIdFromFileMetadata(fileMetadata: FileMetadata): string {
@@ -53,6 +54,11 @@ export class FtpInewsClient implements InewsClient {
 
   private getStoryNameFromFileMetadata(fileMetadata: FileMetadata): string {
     return fileMetadata.name.trim().split(' ').slice(1).join(' ') ?? 'unknown name'
+  }
+
+  private getStoryLocatorFromFileMetadata(fileMetadata: FileMetadata): string {
+    const idAndLocator: string = fileMetadata.name.trim().split(' ')[0] ?? ''
+    return idAndLocator.split(':').slice(1).join(':')
   }
 
   public subscribeToConnectionState(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void {

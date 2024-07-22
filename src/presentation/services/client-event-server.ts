@@ -7,8 +7,17 @@ import { EventServer } from '../interfaces/event-server'
 import { ConnectionStateEventObserver } from '../interfaces/connection-state-event-observer'
 import { TypedEvent } from '../value-objects/typed-event'
 import { InewsQueuePoolEmitter } from '../../business-logic/interfaces/inews-queue-pool-emitter'
+import { ConnectionStatus } from '../../data-access/enums/connection-status'
+import { ConnectionStateEvent } from '../value-objects/connection-state-event'
+import { ConnectionStateEventType } from '../enums/connection-state-event-type'
 
 export class ClientEventServer implements EventServer {
+  private lastConnectionStateEvent: ConnectionStateEvent = {
+    type: ConnectionStateEventType.CONNECTION_STATE_UPDATED,
+    status: ConnectionStatus.DISCONNECTED,
+    message: 'Unknown reason.',
+  }
+
   private readonly queueSubscriptions: Map<string, Set<string>> = new Map()
   private readonly logger: Logger
 
@@ -21,7 +30,10 @@ export class ClientEventServer implements EventServer {
   ) {
     this.logger = logger.tag(this.constructor.name)
     this.ingestEventObserver.subscribeToIngestEvents(ingestEvent => this.sendIngestEvent(ingestEvent))
-    this.connectionStateEventObserver.subscribeToConnectionStateEvents(connectionStateEvent => this.broadcastTypedEvent(connectionStateEvent))
+    this.connectionStateEventObserver.subscribeToConnectionStateEvents((connectionStateEvent) => {
+      this.lastConnectionStateEvent = connectionStateEvent
+      this.broadcastTypedEvent(connectionStateEvent)
+    })
   }
 
   private sendIngestEvent(ingestEvent: IngestEvent): void {
@@ -47,6 +59,7 @@ export class ClientEventServer implements EventServer {
     this.logger.data(clientConfiguration).debug(`Client with client id '${clientId}' is registered with ${clientConfiguration.queueIds.length} queue(s).`)
     this.logger.data(this.getInewsQueuePool()).debug(`${this.queueSubscriptions.size} queue(s) are registered.`)
     this.emitInewsQueuePool()
+    this.sendTypedEventToClient(clientId, this.lastConnectionStateEvent)
   }
 
   private getClientConfiguration(options: Record<string, unknown>): ClientConfiguration {
@@ -79,6 +92,10 @@ export class ClientEventServer implements EventServer {
 
   private getInewsQueuePool(): string[] {
     return Array.from(this.queueSubscriptions.keys())
+  }
+
+  private sendTypedEventToClient(clientId: string, typedEvent: TypedEvent): void {
+    this.clientConnectionServer.sendMessageToClient(clientId, JSON.stringify(typedEvent))
   }
 
   private deregisterClient(clientId: string): void {

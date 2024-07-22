@@ -2,10 +2,20 @@
 
 export interface NsmlDocument {
   readonly version: string
-  readonly head: Readonly<Record<string, string>>
-  readonly fields: Readonly<Record<string, string>>
+  readonly head: NsmlHead
+  readonly fields: NsmlFields
   readonly body: readonly NsmlParagraph[]
   readonly anchoredElements: Readonly<Record<string, NsmlAnchoredElement>>
+}
+
+export interface NsmlHead {
+  readonly storyid: string
+  readonly [key: string]: string
+}
+
+export interface NsmlFields {
+  readonly title: string
+  readonly [key: string]: string
 }
 
 export type NsmlParagraph =

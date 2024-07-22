@@ -6,10 +6,11 @@ import { NsmlParser } from '../interfaces/nsml-parser'
 export class NsmlInewsStoryParser implements InewsStoryParser {
   public constructor(private readonly nsmlParser: NsmlParser) {}
 
-  public parseInewsStory(text: string, queueId: string, storyId: string): InewsStory {
+  public parseInewsStory(text: string, queueId: string): InewsStory {
     const nsmlDocument = this.nsmlParser.parseNsmlDocument(text)
     return {
-      id: storyId,
+      id: nsmlDocument.head.storyid.split(':')[0]!,
+      name: nsmlDocument.fields.title,
       queueId,
       metadata: this.formatMetadata(nsmlDocument.fields),
       cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements),

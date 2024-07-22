@@ -3,6 +3,8 @@ import { InewsClient } from '../interfaces/inews-client'
 import { Logger } from '../../logger/logger'
 import { ConnectionStateEmitter } from '../interfaces/connection-state-emitter'
 import { InewsQueuePoolObserver } from '../interfaces/inews-queue-pool-observer'
+import { InewsStory } from '../entities/inews-story'
+import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 
 export class PollingInewsQueueWatcher implements InewsQueueWatcher {
   private pollingTimer?: NodeJS.Timeout
@@ -34,13 +36,27 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
   }
 
   private async pollData(): Promise<void> {
+    const startTime: [number, number] = process.hrtime()
     for (const queueId of this.queueIds) {
-      const storyId: string | undefined = (await this.inewsClient.getStoryMetadataForQueue(queueId))[0]?.id
-      if (!storyId) {
-        continue
-      }
-      console.log(JSON.stringify(await this.inewsClient.getStory(queueId, storyId), null, 4))
+      const changedStories: readonly InewsStory[] = await this.fetchChangedStoriesForQueue(queueId)
+      this.logger.debug(`${queueId} has ${changedStories.length} changed stories`)
     }
+    const diff: [number, number] = process.hrtime(startTime)
+    this.logger.debug(`Pulling all queues took ${diff[0] * 1000 + diff[1] / 1_000_000}ms.`)
+  }
+
+  private storyMetadataCache: Record<string, InewsStoryMetadata> = {}
+
+  private async fetchChangedStoriesForQueue(queueId: string): Promise<readonly InewsStory[]> {
+    const storyMetadataCollection: readonly InewsStoryMetadata[] = await this.inewsClient.getStoryMetadataForQueue(queueId)
+    let changedInewsStories: InewsStory[] = []
+    for (const storyMetadata of storyMetadataCollection) {
+      if (storyMetadata.locator !== this.storyMetadataCache[storyMetadata.id]?.locator) {
+        changedInewsStories.push(await this.inewsClient.getStory(queueId, storyMetadata.id))
+        this.storyMetadataCache[storyMetadata.id] = storyMetadata
+      }
+    }
+    return changedInewsStories
   }
 
   private clearPollingTimer(): void {

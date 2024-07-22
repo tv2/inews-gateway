@@ -10,7 +10,7 @@ describe(NsmlInewsStoryParser.name, () => {
         const text: string = '<nsml version="some version 1.0"><head><storyid>001ea938:00ff8cf0:656994ba</storyid></head><story><fields><f id=my-weird-key-name>some value</f></fields></story>'
         const testee: InewsStoryParser = createTestee()
 
-        const result: InewsStory = testee.parseInewsStory(text, 'queue-id', 'story-id')
+        const result: InewsStory = testee.parseInewsStory(text, 'queue-id')
 
         expect(result.metadata).toHaveProperty('myWeirdKeyName')
         expect(result.metadata.myWeirdKeyName).toEqual('some value')
@@ -24,6 +24,7 @@ describe(NsmlInewsStoryParser.name, () => {
       const testee: InewsStoryParser = createTestee()
       const expectedInewsStory: InewsStory = {
         id: 'story-id',
+        name: 'Segment title',
         queueId: 'queue-id',
         metadata: {},
         cues: [
@@ -42,7 +43,7 @@ describe(NsmlInewsStoryParser.name, () => {
         ],
       }
 
-      const result: InewsStory = testee.parseInewsStory(text, 'queue-id', 'story-id')
+      const result: InewsStory = testee.parseInewsStory(text, 'queue-id')
 
       expect(result).toMatchObject(expectedInewsStory)
     })

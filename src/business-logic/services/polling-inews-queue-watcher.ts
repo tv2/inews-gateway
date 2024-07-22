@@ -18,7 +18,7 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
 
   public async start(): Promise<void> {
     this.inewsClient.subscribeToConnectionState(connectionState => this.connectionStateEmitter.emitConnectionState(connectionState))
-    await this.inewsClient.connect().catch(error => this.logger.data(error).error(`Failed connecting to iNews server. Reconnect attempt in ${this.pollingIntervalInMs}ms.`))
+    await this.inewsClient.connect().catch(error => this.logger.data(error).error('Failed connecting to iNews server.'))
     this.schedulePolling()
   }
 

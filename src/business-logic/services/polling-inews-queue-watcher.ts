@@ -5,6 +5,7 @@ import { ConnectionStateEmitter } from '../interfaces/connection-state-emitter'
 import { InewsQueuePoolObserver } from '../interfaces/inews-queue-pool-observer'
 import { InewsStory } from '../entities/inews-story'
 import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
+import { InewsQueueEmitter } from '../interfaces/inews-queue-emitter'
 
 export class PollingInewsQueueWatcher implements InewsQueueWatcher {
   private pollingTimer?: NodeJS.Timeout
@@ -16,6 +17,7 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
     private readonly inewsClient: InewsClient,
     private readonly connectionStateEmitter: ConnectionStateEmitter,
     private readonly inewsQueuePoolObserver: InewsQueuePoolObserver,
+    private readonly inewsQueueEmitter: InewsQueueEmitter,
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
@@ -39,6 +41,7 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
     const startTime: [number, number] = process.hrtime()
     for (const queueId of this.queueIds) {
       const changedStories: readonly InewsStory[] = await this.fetchChangedStoriesForQueue(queueId)
+      changedStories.forEach(story => this.inewsQueueEmitter.emitChangedInewsStory(story))
       this.logger.debug(`${queueId} has ${changedStories.length} changed stories.`)
     }
     const diff: [number, number] = process.hrtime(startTime)

@@ -27,6 +27,7 @@ export class ServiceFacade {
       this.createInewsClient(),
       DomainEventFacade.createConnectionStateEmitter(),
       DomainEventFacade.createInewsQueuePoolObserver(),
+      DomainEventFacade.createInewsQueueEmitter(),
       LoggerFacade.createLogger(),
     )
   }

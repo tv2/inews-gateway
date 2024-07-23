@@ -29,7 +29,10 @@ export class ClientEventServer implements EventServer {
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
-    this.ingestEventObserver.subscribeToIngestEvents(ingestEvent => this.sendIngestEvent(ingestEvent))
+    this.ingestEventObserver.subscribeToIngestEvents(ingestEvent => {
+      console.log('HELLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOooo')
+      this.sendIngestEvent(ingestEvent)
+    })
     this.connectionStateEventObserver.subscribeToConnectionStateEvents((connectionStateEvent) => {
       this.lastConnectionStateEvent = connectionStateEvent
       this.broadcastTypedEvent(connectionStateEvent)

@@ -33,6 +33,7 @@ export class FtpInewsClient implements InewsClient {
       .map(fileMetadata => ({
         id: this.getStoryIdFromFileMetadata(fileMetadata),
         name: this.getStoryNameFromFileMetadata(fileMetadata),
+        queueId,
         locator: this.getStoryLocatorFromFileMetadata(fileMetadata),
         modifiedAtEpochTime: this.inewsTimestampParser.parseInewsFtpTimestamp(fileMetadata.modifiedAt),
       }))

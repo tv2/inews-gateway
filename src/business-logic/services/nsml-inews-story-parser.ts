@@ -1,6 +1,6 @@
 import { InewsStoryParser } from '../interfaces/inews-story-parser'
 import { CueType, InewsCue, InewsStory } from '../entities/inews-story'
-import { NsmlAnchoredElement, NsmlParagraph, NsmlParagraphType } from '../value-objects/nsml-document'
+import { NsmlAnchoredElement, NsmlDocument, NsmlParagraph, NsmlParagraphType } from '../value-objects/nsml-document'
 import { NsmlParser } from '../interfaces/nsml-parser'
 
 export class NsmlInewsStoryParser implements InewsStoryParser {
@@ -12,6 +12,7 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
       id: nsmlDocument.head.storyid.split(':')[0]!,
       name: nsmlDocument.fields.title,
       queueId,
+      locator: this.getStoryLocator(nsmlDocument),
       metadata: this.formatMetadata(nsmlDocument.fields),
       cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements),
     }
@@ -60,5 +61,9 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
           }
       }
     })
+  }
+
+  private getStoryLocator(nsmlDocument: NsmlDocument): string {
+    return nsmlDocument.head.storyid.split(':').slice(1).join(':')
   }
 }

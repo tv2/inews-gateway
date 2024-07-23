@@ -51,12 +51,27 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
     const storyMetadataCollection: readonly InewsStoryMetadata[] = await this.inewsClient.getStoryMetadataForQueue(queueId)
     let changedInewsStories: InewsStory[] = []
     for (const storyMetadata of storyMetadataCollection) {
-      if (storyMetadata.locator !== this.storyMetadataCache[storyMetadata.id]?.locator) {
+      if (this.hasStoryChangedOnRemote(storyMetadata)) {
         changedInewsStories.push(await this.inewsClient.getStory(queueId, storyMetadata.id))
-        this.storyMetadataCache[storyMetadata.id] = storyMetadata
       }
+      this.storyMetadataCache[storyMetadata.id] = storyMetadata
     }
     return changedInewsStories
+  }
+
+  private hasStoryChangedOnRemote(storyMetadata: InewsStoryMetadata): boolean {
+    const previousStoryMetadata: InewsStoryMetadata | undefined = this.storyMetadataCache[storyMetadata.id]
+    if (!previousStoryMetadata) {
+      return true
+    }
+
+    if (storyMetadata.locator === previousStoryMetadata.locator) {
+      return false
+    }
+
+    const contentPartOfLocator: string = storyMetadata.locator.split(':')[0]!
+    const previousContentPartOfLocator: string = previousStoryMetadata.locator.split(':')[0]!
+    return contentPartOfLocator !== previousContentPartOfLocator
   }
 
   private clearPollingTimer(): void {

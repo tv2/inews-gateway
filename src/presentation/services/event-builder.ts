@@ -3,7 +3,7 @@ import {
   InewsStoryChangedEvent,
   InewsStoryCreatedEvent, InewsStoryDeletedEvent,
   InewsStoryMovedEvent,
-  IngestEvent
+  IngestEvent,
 } from '../value-objects/ingest-event'
 import { IngestEventType } from '../enums/ingest-event-type'
 import { ConnectionStateEventBuilder } from '../interfaces/connection-state-event-builder'

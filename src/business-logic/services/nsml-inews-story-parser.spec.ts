@@ -26,6 +26,7 @@ describe(NsmlInewsStoryParser.name, () => {
         id: '001ea938',
         name: 'Segment title',
         queueId: 'queue-id',
+        locator: '00ff8cf0:656994ba',
         metadata: {},
         cues: [
           {

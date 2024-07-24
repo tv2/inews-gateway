@@ -51,7 +51,7 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
     const storyMetadataCollection: readonly InewsStoryMetadata[] = await this.inewsClient.getStoryMetadataForQueue(queueId)
     let changedInewsStories: InewsStory[] = []
     for (const storyMetadata of storyMetadataCollection) {
-      if (storyMetadata.locator !== this.storyMetadataCache[storyMetadata.id]?.locator) {
+      if (storyMetadata.versionLocator !== this.storyMetadataCache[storyMetadata.id]?.versionLocator) {
         changedInewsStories.push(await this.inewsClient.getStory(queueId, storyMetadata.id))
         this.storyMetadataCache[storyMetadata.id] = storyMetadata
       }

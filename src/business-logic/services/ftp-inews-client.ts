@@ -6,15 +6,23 @@ import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
 import { ConnectionState } from '../../data-access/value-objects/connection-state'
 import { InewsStoryParser } from '../interfaces/inews-story-parser'
 import { InewsStory } from '../entities/inews-story'
+import { InewsIdParser } from '../interfaces/inews-id-parser'
+import { InewsId } from '../entities/inews-id'
+import { Logger } from '../../logger/logger'
 
 export class FtpInewsClient implements InewsClient {
   private readonly onConnectionStateChangedCallbacks: ((connectionState: ConnectionState) => void)[] = []
+  private readonly logger: Logger
 
   public constructor(
     private readonly ftpClient: FtpClient,
     private readonly inewsTimestampParser: InewsTimestampParser,
     private readonly inewsStoryParser: InewsStoryParser,
-  ) {}
+    private readonly inewsIdParser: InewsIdParser,
+    logger: Logger,
+  ) {
+    this.logger = logger.tag(this.constructor.name)
+  }
 
   public async connect(): Promise<void> {
     this.ftpClient.setOnConnectionStateChangedCallback(connectionState => this.emitConnectionState(connectionState))
@@ -30,12 +38,42 @@ export class FtpInewsClient implements InewsClient {
     const fileMetadataCollection: readonly FileMetadata[] = await this.ftpClient.listFiles()
     return fileMetadataCollection
       .filter(fileMetadata => fileMetadata.type === 'file')
-      .map(fileMetadata => ({
-        id: this.getStoryIdFromFileMetadata(fileMetadata),
-        name: this.getStoryNameFromFileMetadata(fileMetadata),
-        locator: this.getStoryLocatorFromFileMetadata(fileMetadata),
-        modifiedAtEpochTime: this.inewsTimestampParser.parseInewsFtpTimestamp(fileMetadata.modifiedAt),
-      }))
+      .reduce(
+        (storyMetadataSequence: readonly InewsStoryMetadata[], fileMetadata: FileMetadata) => {
+          try {
+            const storyMetadata: InewsStoryMetadata = this.mapToInewsStoryMetadata(fileMetadata, queueId)
+            return [...storyMetadataSequence, storyMetadata]
+          } catch (error) {
+            this.logger.data({ error, fileMetadata }).error('Failed converting file metadata to iNews story metadata.')
+            return storyMetadataSequence
+          }
+        },
+        [],
+      )
+  }
+
+  private mapToInewsStoryMetadata(fileMetadata: FileMetadata, queueId: string): InewsStoryMetadata {
+    const inewsId: InewsId = this.getInewsIdFromFileMetadata(fileMetadata)
+    return {
+      id: inewsId.storyId,
+      name: this.getStoryNameFromFileMetadata(fileMetadata),
+      queueId,
+      contentLocator: inewsId.contentLocator,
+      versionLocator: inewsId.versionLocator,
+      modifiedAtEpochTime: this.inewsTimestampParser.parseInewsFtpTimestamp(fileMetadata.modifiedAt),
+    }
+  }
+
+  private getInewsIdFromFileMetadata(fileMetadata: FileMetadata): InewsId {
+    const inewsIdText: string | undefined = fileMetadata.name.trim().split(' ')[0]
+    if (!inewsIdText) {
+      throw new Error('Expected file name to have the format "<inews-id> <story-name>".')
+    }
+    return this.inewsIdParser.parseInewsId(inewsIdText)
+  }
+
+  private getStoryNameFromFileMetadata(fileMetadata: FileMetadata): string {
+    return fileMetadata.name.trim().split(' ')[1] ?? fileMetadata.name.trim()
   }
 
   private async setWorkingDirectory(path: string): Promise<void> {
@@ -46,19 +84,6 @@ export class FtpInewsClient implements InewsClient {
   public async getStory(queueId: string, storyId: string): Promise<InewsStory> {
     await this.setWorkingDirectory(queueId)
     return this.inewsStoryParser.parseInewsStory(await this.ftpClient.getFile(storyId), queueId)
-  }
-
-  private getStoryIdFromFileMetadata(fileMetadata: FileMetadata): string {
-    return fileMetadata.name.trim().split(':')[0] ?? fileMetadata.name
-  }
-
-  private getStoryNameFromFileMetadata(fileMetadata: FileMetadata): string {
-    return fileMetadata.name.trim().split(' ').slice(1).join(' ') ?? 'unknown name'
-  }
-
-  private getStoryLocatorFromFileMetadata(fileMetadata: FileMetadata): string {
-    const idAndLocator: string = fileMetadata.name.trim().split(' ')[0] ?? ''
-    return idAndLocator.split(':').slice(1).join(':')
   }
 
   public subscribeToConnectionState(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void {

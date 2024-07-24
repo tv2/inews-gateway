@@ -81,9 +81,9 @@ export class FtpInewsClient implements InewsClient {
     await this.ftpClient.changeWorkingDirectory(path)
   }
 
-  public async getStory(queueId: string, storyId: string): Promise<InewsStory> {
+  public async getStory(queueId: string, inewsId: InewsId): Promise<InewsStory> {
     await this.setWorkingDirectory(queueId)
-    return this.inewsStoryParser.parseInewsStory(await this.ftpClient.getFile(storyId), queueId)
+    return this.inewsStoryParser.parseInewsStory(await this.ftpClient.getFile(inewsId.storyId), queueId, inewsId)
   }
 
   public subscribeToConnectionState(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void {

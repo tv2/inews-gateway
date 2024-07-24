@@ -60,5 +60,6 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
           }
       }
     })
+      .filter(cue => cue.content.length > 0)
   }
 }

@@ -28,8 +28,8 @@ export class RegExpNsmlParser implements NsmlParser {
 
   private parseNsmlVersion(text: string): string {
     const nsmlTagPattern: RegExp = /<nsml\s+version="(?<version>[^"]+)"\s*>/is
-    const match: { version: string } | undefined = nsmlTagPattern.exec(text)?.groups as { version: string } | undefined
-    if (!match) {
+    const match: Record<string, string> | undefined = nsmlTagPattern.exec(text)?.groups
+    if (!match?.version) {
       throw new Error('Failed to find NSML tag with version attribute.')
     }
     return match.version

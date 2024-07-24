@@ -18,6 +18,10 @@ import { InewsQueueDiffer } from '../interfaces/inews-queue-differ'
 import { InewsQueueDifferImplementation } from '../services/inews-queue-differ-implementation'
 import { InewsIdParser } from '../interfaces/inews-id-parser'
 import { InewsIdParserImplementation } from '../services/inews-id-parser-implementation'
+import { InewsQueueRepository } from '../interfaces/inews-queue-repository'
+import { InMemoryInewsQueueRepository } from '../services/in-memory-inews-queue-repository'
+import { InewsStoryRankResolver } from '../interfaces/inews-story-rank-resolver'
+import { InewsStoryRankResolverImplementation } from '../services/inews-story-rank-resolver-implementation'
 
 export class ServiceFacade {
   public static createApplicationConfigurationService(): ApplicationConfigurationService {
@@ -33,6 +37,8 @@ export class ServiceFacade {
       DomainEventFacade.createInewsQueuePoolObserver(),
       DomainEventFacade.createInewsQueueEmitter(),
       this.createInewsQueueDiffer(),
+      this.createInewsQueueRepository(),
+      this.createInewsStoryRankResolver(),
       LoggerFacade.createLogger(),
     )
   }
@@ -56,5 +62,13 @@ export class ServiceFacade {
 
   public static createInewsIdParser(): InewsIdParser {
     return new InewsIdParserImplementation()
+  }
+
+  public static createInewsQueueRepository(): InewsQueueRepository {
+    return new InMemoryInewsQueueRepository()
+  }
+
+  public static createInewsStoryRankResolver(): InewsStoryRankResolver {
+    return new InewsStoryRankResolverImplementation()
   }
 }

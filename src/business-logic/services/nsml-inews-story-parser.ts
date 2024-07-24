@@ -23,6 +23,7 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
       versionLocator: inewsId.versionLocator.toUpperCase(),
       metadata: this.formatMetadata(nsmlDocument.fields),
       cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements),
+      rank: 0,
     }
   }
 

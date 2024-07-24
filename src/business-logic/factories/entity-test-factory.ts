@@ -32,11 +32,12 @@ export class EntityTestFactory {
       versionLocator: this.generateRandomId(),
       metadata: {},
       cues: [],
+      rank: 0,
       ...partialInewsStory,
     }
   }
 
-  public static createInewsId(partialInewsId: Partial<InewsId>): InewsId {
+  public static createInewsId(partialInewsId: Partial<InewsId> = {}): InewsId {
     return {
       storyId: partialInewsId.storyId?.toUpperCase() ?? this.generateRandomId(),
       contentLocator: partialInewsId.contentLocator?.toUpperCase() ?? this.generateRandomId(),

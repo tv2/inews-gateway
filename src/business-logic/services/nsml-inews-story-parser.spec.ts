@@ -35,6 +35,7 @@ describe(NsmlInewsStoryParser.name, () => {
           contentLocator: inewsId.contentLocator,
           versionLocator: inewsId.versionLocator,
           metadata: {},
+          rank: 0,
           cues: [
             {
               type: CueType.CONTENT,

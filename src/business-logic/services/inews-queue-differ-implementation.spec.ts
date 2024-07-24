@@ -5,23 +5,21 @@ import { EntityTestFactory } from '../factories/entity-test-factory'
 
 describe(InewsQueueDifferImplementation.name, () => {
   describe(InewsQueueDifferImplementation.prototype.getMetadataForUncachedStories, () => {
-    describe('when all stories are cached', () => {
-      it('returns an empty array', () => {
-        const storyMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata] = [
-          EntityTestFactory.createInewsStoryMetadata(),
-          EntityTestFactory.createInewsStoryMetadata(),
-        ]
-        const cachedStories: Readonly<Record<string, InewsStory>> = {
-          [storyMetadataSequence[0].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[0]),
-          [storyMetadataSequence[1].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[1]),
-        }
-        const testee: InewsQueueDifferImplementation = createTestee()
+    describe('when all stories are cached', () => it('returns an empty array', () => {
+      const storyMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata] = [
+        EntityTestFactory.createInewsStoryMetadata(),
+        EntityTestFactory.createInewsStoryMetadata(),
+      ]
+      const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+        [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory(storyMetadataSequence[0])],
+        [storyMetadataSequence[1].id, EntityTestFactory.createInewsStory(storyMetadataSequence[1])],
+      ])
+      const testee: InewsQueueDifferImplementation = createTestee()
 
-        const result: readonly InewsStoryMetadata[] = testee.getMetadataForUncachedStories(storyMetadataSequence, cachedStories)
+      const result: readonly InewsStoryMetadata[] = testee.getMetadataForUncachedStories(storyMetadataSequence, cachedStories)
 
-        expect(result).toMatchObject([])
-      })
-    })
+      expect(result).toMatchObject([])
+    }))
 
     describe('when some stories are uncached', () => {
       it('returns metadata for the uncached stories', () => {
@@ -30,10 +28,10 @@ describe(InewsQueueDifferImplementation.name, () => {
           EntityTestFactory.createInewsStoryMetadata(),
           EntityTestFactory.createInewsStoryMetadata(),
         ]
-        const cachedStories: Readonly<Record<string, InewsStory>> = {
-          [storyMetadataSequence[0].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[0]),
-          [storyMetadataSequence[2].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[2]),
-        }
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+          [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory(storyMetadataSequence[0])],
+          [storyMetadataSequence[2].id, EntityTestFactory.createInewsStory(storyMetadataSequence[2])],
+        ])
         const testee: InewsQueueDifferImplementation = createTestee()
 
         const result: readonly InewsStoryMetadata[] = testee.getMetadataForUncachedStories(storyMetadataSequence, cachedStories)
@@ -50,10 +48,10 @@ describe(InewsQueueDifferImplementation.name, () => {
           EntityTestFactory.createInewsStoryMetadata(),
           EntityTestFactory.createInewsStoryMetadata(),
         ]
-        const cachedStories: Readonly<Record<string, InewsStory>> = {
-          [storyMetadataSequence[0].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[0]),
-          [storyMetadataSequence[1].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[1]),
-        }
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+          [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory(storyMetadataSequence[0])],
+          [storyMetadataSequence[1].id, EntityTestFactory.createInewsStory(storyMetadataSequence[1])],
+        ])
         const testee: InewsQueueDifferImplementation = createTestee()
 
         const result: readonly InewsStoryMetadata[] = testee.getMetadataForStoriesWithChangedContent(storyMetadataSequence, cachedStories)
@@ -69,11 +67,11 @@ describe(InewsQueueDifferImplementation.name, () => {
           EntityTestFactory.createInewsStoryMetadata(),
           EntityTestFactory.createInewsStoryMetadata(),
         ]
-        const cachedStories: Readonly<Record<string, InewsStory>> = {
-          [storyMetadataSequence[0].id]: EntityTestFactory.createInewsStory({ ...storyMetadataSequence[0], contentLocator: 'oldContent', versionLocator: 'oldVersion' }),
-          [storyMetadataSequence[1].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[1]),
-          [storyMetadataSequence[2].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[2]),
-        }
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+          [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...storyMetadataSequence[0], contentLocator: 'oldContent', versionLocator: 'oldVersion' })],
+          [storyMetadataSequence[1].id, EntityTestFactory.createInewsStory(storyMetadataSequence[1])],
+          [storyMetadataSequence[2].id, EntityTestFactory.createInewsStory(storyMetadataSequence[2])],
+        ])
         const testee: InewsQueueDifferImplementation = createTestee()
 
         const result: readonly InewsStoryMetadata[] = testee.getMetadataForStoriesWithChangedContent(storyMetadataSequence, cachedStories)
@@ -85,7 +83,7 @@ describe(InewsQueueDifferImplementation.name, () => {
     describe('when the story version is changed but not the content', () => {
       it('ignores the story', () => {
         const cachedInewsStoryMetadata: InewsStoryMetadata = EntityTestFactory.createInewsStoryMetadata()
-        const cachedStories: Readonly<Record<string, InewsStory>> = { [cachedInewsStoryMetadata.id]: EntityTestFactory.createInewsStory(cachedInewsStoryMetadata) }
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([[cachedInewsStoryMetadata.id, EntityTestFactory.createInewsStory(cachedInewsStoryMetadata)]])
         const updatedInewsStoryMetadata: InewsStoryMetadata = {
           ...cachedInewsStoryMetadata,
           versionLocator: 'newVersion',
@@ -105,9 +103,9 @@ describe(InewsQueueDifferImplementation.name, () => {
       describe('when the content locator is unchanged', () => {
         it('classifies the story as moved', () => {
           const storyMetadataSequence: readonly [InewsStoryMetadata] = [EntityTestFactory.createInewsStoryMetadata()]
-          const cachedStories: Readonly<Record<string, InewsStory>> = {
-            [storyMetadataSequence[0].id]: EntityTestFactory.createInewsStory({ ...storyMetadataSequence[0], versionLocator: 'newVersion' }),
-          }
+          const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+            [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...storyMetadataSequence[0], versionLocator: 'newVersion' })],
+          ])
           const testee: InewsQueueDifferImplementation = createTestee()
 
           const result: readonly InewsStoryMetadata[] = testee.getMetadataForMovedStories(storyMetadataSequence, cachedStories)
@@ -119,9 +117,9 @@ describe(InewsQueueDifferImplementation.name, () => {
       describe('when the content locator is changed', () => {
         it('ignores the story', () => {
           const storyMetadataSequence: readonly [InewsStoryMetadata] = [EntityTestFactory.createInewsStoryMetadata()]
-          const cachedStories: Readonly<Record<string, InewsStory>> = {
-            [storyMetadataSequence[0].id]: EntityTestFactory.createInewsStory({ ...storyMetadataSequence[0], contentLocator: 'newContent', versionLocator: 'newVersion' }),
-          }
+          const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+            [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...storyMetadataSequence[0], contentLocator: 'newContent', versionLocator: 'newVersion' })],
+          ])
           const testee: InewsQueueDifferImplementation = createTestee()
 
           const result: readonly InewsStoryMetadata[] = testee.getMetadataForMovedStories(storyMetadataSequence, cachedStories)
@@ -140,10 +138,10 @@ describe(InewsQueueDifferImplementation.name, () => {
           EntityTestFactory.createInewsStoryMetadata(),
           EntityTestFactory.createInewsStoryMetadata(),
         ]
-        const cachedStories: Readonly<Record<string, InewsStory>> = {
-          [storyMetadataSequence[0].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[0]),
-          [storyMetadataSequence[2].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[2]),
-        }
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+          [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory(storyMetadataSequence[0])],
+          [storyMetadataSequence[2].id, EntityTestFactory.createInewsStory(storyMetadataSequence[2])],
+        ])
         const testee: InewsQueueDifferImplementation = createTestee()
 
         const result: readonly string[] = testee.getDeletedStoryIds(storyMetadataSequence, cachedStories)
@@ -164,13 +162,13 @@ describe(InewsQueueDifferImplementation.name, () => {
           EntityTestFactory.createInewsStory(),
           EntityTestFactory.createInewsStory(),
         ]
-        const cachedStories: Readonly<Record<string, InewsStory>> = {
-          [storyMetadataSequence[0].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[0]),
-          [storyMetadataSequence[2].id]: EntityTestFactory.createInewsStory(storyMetadataSequence[2]),
-          [deletedStories[0].id]: deletedStories[0],
-          [deletedStories[1].id]: deletedStories[1],
-          [deletedStories[2].id]: deletedStories[2],
-        }
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+          [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory(storyMetadataSequence[0])],
+          [storyMetadataSequence[2].id, EntityTestFactory.createInewsStory(storyMetadataSequence[2])],
+          [deletedStories[0].id, deletedStories[0]],
+          [deletedStories[1].id, deletedStories[1]],
+          [deletedStories[2].id, deletedStories[2]],
+        ])
         const testee: InewsQueueDifferImplementation = createTestee()
 
         const result: readonly string[] = testee.getDeletedStoryIds(storyMetadataSequence, cachedStories)

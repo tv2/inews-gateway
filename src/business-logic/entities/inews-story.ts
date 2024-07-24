@@ -6,6 +6,7 @@ export interface InewsStory {
   readonly versionLocator: string
   readonly metadata: Readonly<Record<string, string>>
   readonly cues: readonly InewsCue[]
+  readonly rank: number
 }
 
 export interface InewsCue {

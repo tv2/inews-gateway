@@ -2,17 +2,24 @@ import { InewsStoryParser } from '../interfaces/inews-story-parser'
 import { CueType, InewsCue, InewsStory } from '../entities/inews-story'
 import { NsmlAnchoredElement, NsmlDocument, NsmlParagraph, NsmlParagraphType } from '../value-objects/nsml-document'
 import { NsmlParser } from '../interfaces/nsml-parser'
+import { InewsIdParser } from '../interfaces/inews-id-parser'
+import { InewsId } from '../entities/inews-id'
 
 export class NsmlInewsStoryParser implements InewsStoryParser {
-  public constructor(private readonly nsmlParser: NsmlParser) {}
+  public constructor(
+    private readonly nsmlParser: NsmlParser,
+    private readonly inewsIdParser: InewsIdParser,
+  ) {}
 
   public parseInewsStory(text: string, queueId: string): InewsStory {
-    const nsmlDocument = this.nsmlParser.parseNsmlDocument(text)
+    const nsmlDocument: NsmlDocument = this.nsmlParser.parseNsmlDocument(text)
+    const inewsId: InewsId = this.inewsIdParser.parseInewsId(nsmlDocument.head.storyid)
     return {
-      id: nsmlDocument.head.storyid.split(':')[0]!,
+      id: inewsId.storyId,
       name: nsmlDocument.fields.title,
       queueId,
-      locator: this.getStoryLocator(nsmlDocument),
+      contentLocator: inewsId.contentLocator,
+      versionLocator: inewsId.versionLocator,
       metadata: this.formatMetadata(nsmlDocument.fields),
       cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements),
     }
@@ -62,9 +69,5 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
       }
     })
       .filter(cue => cue.content.length > 0)
-  }
-
-  private getStoryLocator(nsmlDocument: NsmlDocument): string {
-    return nsmlDocument.head.storyid.split(':').slice(1).join(':')
   }
 }

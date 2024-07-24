@@ -61,6 +61,7 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
           }
       }
     })
+      .filter(cue => cue.content.length > 0)
   }
 
   private getStoryLocator(nsmlDocument: NsmlDocument): string {

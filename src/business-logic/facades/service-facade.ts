@@ -14,6 +14,8 @@ import { DomainEventFacade } from './domain-event-facade'
 import { InewsStoryParser } from '../interfaces/inews-story-parser'
 import { NsmlInewsStoryParser } from '../services/nsml-inews-story-parser'
 import { RegExpNsmlParser } from '../services/reg-exp-nsml-parser'
+import { InewsIdParser } from '../interfaces/inews-id-parser'
+import { InewsIdParserImplementation } from '../services/inews-id-parser-implementation'
 
 export class ServiceFacade {
   public static createApplicationConfigurationService(): ApplicationConfigurationService {
@@ -34,7 +36,7 @@ export class ServiceFacade {
 
   public static createInewsClient(): InewsClient {
     const applicationConfiguration: ApplicationConfiguration = this.createApplicationConfigurationService().getApplicationConfiguration()
-    return new FtpInewsClient(FtpClientFacade.createRoundRobinFtpClientPool(applicationConfiguration.inewsFtpConnectionConfigurations), this.createInewsTimestampParser(), this.createInewsStoryParser())
+    return new FtpInewsClient(FtpClientFacade.createRoundRobinFtpClientPool(applicationConfiguration.inewsFtpConnectionConfigurations), this.createInewsTimestampParser(), this.createInewsStoryParser(), this.createInewsIdParser(), LoggerFacade.createLogger())
   }
 
   public static createInewsStoryParser(): InewsStoryParser {
@@ -43,5 +45,9 @@ export class ServiceFacade {
 
   public static createInewsTimestampParser(): InewsTimestampParser {
     return new InewsFtpTimestampParser()
+  }
+
+  public static createInewsIdParser(): InewsIdParser {
+    return new InewsIdParserImplementation()
   }
 }

@@ -70,18 +70,16 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
       return true
     }
 
-    if (storyMetadata.locator === previousStoryMetadata.locator) {
+    if (storyMetadata.versionLocator === previousStoryMetadata.versionLocator) {
       return false
     }
 
-    const contentPartOfLocator: string = storyMetadata.locator.split(':')[0]!
-    const previousContentPartOfLocator: string = previousStoryMetadata.locator.split(':')[0]!
-    return contentPartOfLocator !== previousContentPartOfLocator
+    return storyMetadata.contentLocator !== previousStoryMetadata.contentLocator
   }
 
   private hasStoryChanged(storyMetadata: InewsStoryMetadata): boolean {
     const previousStoryMetadata: InewsStoryMetadata | undefined = this.storyMetadataCache[storyMetadata.id]
-    return storyMetadata.locator !== previousStoryMetadata?.locator
+    return storyMetadata.versionLocator !== previousStoryMetadata?.versionLocator
   }
 
   private clearPollingTimer(): void {

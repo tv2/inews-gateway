@@ -35,9 +35,7 @@ describe(RegExpNsmlParser.name, () => {
       const expectedNsmlDocument: NsmlDocument = {
         version: nsmlVersion,
         head: { storyid: storyId },
-        fields: {
-          title,
-        },
+        fields: { title },
         body: [
           {
             type: NsmlParagraphType.CUE_REFERENCE,

@@ -49,7 +49,7 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
       }
     }
     const diff: bigint = process.hrtime.bigint() - startTime
-    this.logger.debug(`Pulling changes for ${this.queueIds.length} queues took ${Number(diff / 1_000_000n)}ms.`)
+    this.logger.debug(`Pulling changes for ${this.queueIds.length} queues took ${Number(diff) / 1_000_000}ms.`)
   }
 
   private readonly storyCache: Record<string, InewsStory> = {}

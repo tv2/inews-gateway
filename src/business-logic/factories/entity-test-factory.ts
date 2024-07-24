@@ -20,7 +20,7 @@ export class EntityTestFactory {
   }
 
   private static generateRandomId(): string {
-    return crypto.randomUUID()
+    return crypto.randomUUID().toUpperCase()
   }
 
   public static createInewsStory(partialInewsStory: Partial<InewsStory> = {}): InewsStory {

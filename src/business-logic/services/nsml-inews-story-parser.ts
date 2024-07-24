@@ -16,11 +16,11 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
     const parsedInewsId: InewsId = this.inewsIdParser.parseInewsId(nsmlDocument.head.storyid)
     this.assertStoryIdConsistency(inewsId, parsedInewsId)
     return {
-      id: nsmlDocument.head.storyid.split(':')[0]!.toUpperCase(),
+      id: inewsId.storyId.toUpperCase(),
       name: nsmlDocument.fields.title,
       queueId,
-      contentLocator: inewsId.contentLocator,
-      versionLocator: inewsId.versionLocator,
+      contentLocator: inewsId.contentLocator.toUpperCase(),
+      versionLocator: inewsId.versionLocator.toUpperCase(),
       metadata: this.formatMetadata(nsmlDocument.fields),
       cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements),
     }

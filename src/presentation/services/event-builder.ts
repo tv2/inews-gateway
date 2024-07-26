@@ -1,5 +1,6 @@
 import { IngestEventBuilder } from '../interfaces/ingest-event-builder'
 import {
+  InewsQueueEvent,
   InewsStoryChangedEvent,
   InewsStoryCreatedEvent, InewsStoryDeletedEvent,
   InewsStoryMovedEvent,
@@ -12,12 +13,21 @@ import { ConnectionStateEventType } from '../enums/connection-state-event-type'
 import { ConnectionState } from '../../data-access/value-objects/connection-state'
 import { ConnectionStatus } from '../../data-access/enums/connection-status'
 import { InewsStory } from '../../business-logic/entities/inews-story'
+import { InewsQueue } from '../../business-logic/entities/inews-queue'
 
 export class EventBuilder implements IngestEventBuilder, ConnectionStateEventBuilder {
   public buildTestEvent(queueId: string): IngestEvent {
     return {
       type: IngestEventType.TEST_EVENT,
       queueId,
+    }
+  }
+
+  public buildInewsQueueEvent(inewsQueue: InewsQueue): InewsQueueEvent {
+    return {
+      type: IngestEventType.INEWS_QUEUE,
+      queueId: inewsQueue.id,
+      queue: inewsQueue,
     }
   }
 

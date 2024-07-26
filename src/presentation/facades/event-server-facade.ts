@@ -4,6 +4,7 @@ import { WebsocketServer } from '../services/websocket-server'
 import { EventServer } from '../interfaces/event-server'
 import { DomainEventFacade } from '../../business-logic/facades/domain-event-facade'
 import { EventBuilderFacade } from './event-builder-facade'
+import { ServiceFacade } from '../../business-logic/facades/service-facade'
 
 export class EventServerFacade {
   public static createWebsocketEventServer(): EventServer {
@@ -14,6 +15,7 @@ export class EventServerFacade {
       DomainEventFacade.createInewsQueueObserver(),
       EventBuilderFacade.createIngestEventBuilder(),
       DomainEventFacade.createInewsQueuePoolEmitter(),
+      ServiceFacade.createInewsQueueRepository(),
       LoggerFacade.createLogger(),
     )
   }

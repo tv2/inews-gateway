@@ -12,6 +12,8 @@ import { InewsQueueObserver } from '../../business-logic/interfaces/inews-queue-
 import { ConnectionStateObserver } from '../../business-logic/interfaces/connection-state-observer'
 import { ConnectionStateEventBuilder } from '../interfaces/connection-state-event-builder'
 import { IngestEventBuilder } from '../interfaces/ingest-event-builder'
+import { InewsQueueRepository } from '../../business-logic/interfaces/inews-queue-repository'
+import { InewsQueue } from '../../business-logic/entities/inews-queue'
 
 export class ClientEventServer implements EventServer {
   private lastConnectionStateEvent: ConnectionStateEvent = {
@@ -30,13 +32,14 @@ export class ClientEventServer implements EventServer {
     private readonly inewsQueueObserver: InewsQueueObserver,
     private readonly ingestEventBuilder: IngestEventBuilder,
     private readonly inewsQueuePoolEmitter: InewsQueuePoolEmitter,
+    private readonly inewsQueueRepository: InewsQueueRepository,
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
     this.inewsQueueObserver.subscribeToCreatedInewsStories(inewsStory => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryCreatedEvent(inewsStory)))
     this.inewsQueueObserver.subscribeToChangedInewsStories(inewsStory => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryChangedEvent(inewsStory)))
     this.inewsQueueObserver.subscribeToMovedInewsStories(inewsStory => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryMovedEvent(inewsStory)))
-    this.inewsQueueObserver.subscribeToDeletedInewsStories((inewsQueueId: string, inewsStoryId: string) => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryDeletedEvent(inewsQueueId, inewsStoryId)))
+    this.inewsQueueObserver.subscribeToDeletedInewsStories((queueId: string, inewsStoryId: string) => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryDeletedEvent(queueId, inewsStoryId)))
     this.connectionStateObserver.subscribeToConnectionState((connectionState) => {
       this.lastConnectionStateEvent = this.connectionStateEventBuilder.buildConnectionStateEvent(connectionState)
       this.broadcastTypedEvent(this.lastConnectionStateEvent)
@@ -67,6 +70,7 @@ export class ClientEventServer implements EventServer {
     this.logger.data(this.getInewsQueuePool()).debug(`${this.queueSubscriptions.size} queue(s) are registered.`)
     this.emitInewsQueuePool()
     this.sendTypedEventToClient(clientId, this.lastConnectionStateEvent)
+    this.sendQueueStateToClient(clientId, clientConfiguration.queueIds)
   }
 
   private getClientConfiguration(options: Record<string, unknown>): ClientConfiguration {
@@ -103,6 +107,16 @@ export class ClientEventServer implements EventServer {
 
   private sendTypedEventToClient(clientId: string, typedEvent: TypedEvent): void {
     this.clientConnectionServer.sendMessageToClient(clientId, JSON.stringify(typedEvent))
+  }
+
+  private sendQueueStateToClient(clientId: string, queueIds: string[]): void {
+    for (const queueId of queueIds) {
+      try {
+        const queue: InewsQueue = this.inewsQueueRepository.getInewsQueue(queueId)
+        const event: IngestEvent = this.ingestEventBuilder.buildInewsQueueEvent(queue)
+        this.sendTypedEventToClient(clientId, event)
+      } catch {}
+    }
   }
 
   private deregisterClient(clientId: string): void {

@@ -24,6 +24,8 @@ import { InewsStoryRankResolver } from '../interfaces/inews-story-rank-resolver'
 import { InewsStoryRankResolverImplementation } from '../services/inews-story-rank-resolver-implementation'
 
 export class ServiceFacade {
+  private static inewsQueueRepository: InewsQueueRepository
+
   public static createApplicationConfigurationService(): ConfigurationService<ApplicationConfiguration> {
     return new ApplicationConfigurationService(RepositoryFacade.createApplicationConfigurationRepository())
   }
@@ -65,7 +67,8 @@ export class ServiceFacade {
   }
 
   public static createInewsQueueRepository(): InewsQueueRepository {
-    return new InMemoryInewsQueueRepository()
+    this.inewsQueueRepository ??= new InMemoryInewsQueueRepository()
+    return this.inewsQueueRepository
   }
 
   public static createInewsStoryRankResolver(): InewsStoryRankResolver {

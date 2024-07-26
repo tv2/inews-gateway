@@ -1,15 +1,17 @@
 import { ClientConfiguration } from '../value-objects/client-configuration'
 import { Logger } from '../../logger/logger'
-import { IngestEventObserver } from '../interfaces/ingest-event-observer'
 import { IngestEvent } from '../value-objects/ingest-event'
 import { ClientConnectionServer } from '../interfaces/client-connection-server'
 import { EventServer } from '../interfaces/event-server'
-import { ConnectionStateEventObserver } from '../interfaces/connection-state-event-observer'
 import { TypedEvent } from '../value-objects/typed-event'
 import { InewsQueuePoolEmitter } from '../../business-logic/interfaces/inews-queue-pool-emitter'
 import { ConnectionStatus } from '../../data-access/enums/connection-status'
 import { ConnectionStateEvent } from '../value-objects/connection-state-event'
 import { ConnectionStateEventType } from '../enums/connection-state-event-type'
+import { InewsQueueObserver } from '../../business-logic/interfaces/inews-queue-observer'
+import { ConnectionStateObserver } from '../../business-logic/interfaces/connection-state-observer'
+import { ConnectionStateEventBuilder } from '../interfaces/connection-state-event-builder'
+import { IngestEventBuilder } from '../interfaces/ingest-event-builder'
 
 export class ClientEventServer implements EventServer {
   private lastConnectionStateEvent: ConnectionStateEvent = {
@@ -23,16 +25,21 @@ export class ClientEventServer implements EventServer {
 
   public constructor(
     private readonly clientConnectionServer: ClientConnectionServer,
-    private readonly ingestEventObserver: IngestEventObserver,
-    private readonly connectionStateEventObserver: ConnectionStateEventObserver,
+    private readonly connectionStateObserver: ConnectionStateObserver,
+    private readonly connectionStateEventBuilder: ConnectionStateEventBuilder,
+    private readonly inewsQueueObserver: InewsQueueObserver,
+    private readonly ingestEventBuilder: IngestEventBuilder,
     private readonly inewsQueuePoolEmitter: InewsQueuePoolEmitter,
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
-    this.ingestEventObserver.subscribeToIngestEvents(ingestEvent => this.sendIngestEvent(ingestEvent))
-    this.connectionStateEventObserver.subscribeToConnectionStateEvents((connectionStateEvent) => {
-      this.lastConnectionStateEvent = connectionStateEvent
-      this.broadcastTypedEvent(connectionStateEvent)
+    this.inewsQueueObserver.subscribeToCreatedInewsStories(inewsStory => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryCreatedEvent(inewsStory)))
+    this.inewsQueueObserver.subscribeToChangedInewsStories(inewsStory => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryChangedEvent(inewsStory)))
+    this.inewsQueueObserver.subscribeToMovedInewsStories(inewsStory => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryMovedEvent(inewsStory)))
+    this.inewsQueueObserver.subscribeToDeletedInewsStories((inewsQueueId: string, inewsStoryId: string) => this.sendIngestEvent(this.ingestEventBuilder.buildInewsStoryDeletedEvent(inewsQueueId, inewsStoryId)))
+    this.connectionStateObserver.subscribeToConnectionState((connectionState) => {
+      this.lastConnectionStateEvent = this.connectionStateEventBuilder.buildConnectionStateEvent(connectionState)
+      this.broadcastTypedEvent(this.lastConnectionStateEvent)
     })
   }
 

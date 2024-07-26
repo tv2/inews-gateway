@@ -2,8 +2,8 @@ import { InewsStoryParser } from '../interfaces/inews-story-parser'
 import { CueType, InewsCue, InewsStory } from '../entities/inews-story'
 import { NsmlAnchoredElement, NsmlDocument, NsmlParagraph, NsmlParagraphType } from '../value-objects/nsml-document'
 import { NsmlParser } from '../interfaces/nsml-parser'
-import { InewsIdParser } from '../interfaces/inews-id-parser'
 import { InewsId } from '../entities/inews-id'
+import { InewsIdParser } from '../interfaces/inews-id-parser'
 
 export class NsmlInewsStoryParser implements InewsStoryParser {
   public constructor(
@@ -11,17 +11,25 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
     private readonly inewsIdParser: InewsIdParser,
   ) {}
 
-  public parseInewsStory(text: string, queueId: string): InewsStory {
+  public parseInewsStory(text: string, queueId: string, inewsId: InewsId): InewsStory {
     const nsmlDocument: NsmlDocument = this.nsmlParser.parseNsmlDocument(text)
-    const inewsId: InewsId = this.inewsIdParser.parseInewsId(nsmlDocument.head.storyid)
+    const parsedInewsId: InewsId = this.inewsIdParser.parseInewsId(nsmlDocument.head.storyid)
+    this.assertStoryIdConsistency(inewsId, parsedInewsId)
     return {
-      id: inewsId.storyId,
+      id: inewsId.storyId.toUpperCase(),
       name: nsmlDocument.fields.title,
       queueId,
-      contentLocator: inewsId.contentLocator,
-      versionLocator: inewsId.versionLocator,
+      contentLocator: inewsId.contentLocator.toUpperCase(),
+      versionLocator: inewsId.versionLocator.toUpperCase(),
       metadata: this.formatMetadata(nsmlDocument.fields),
       cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements),
+      rank: 0,
+    }
+  }
+
+  private assertStoryIdConsistency(inewsId: InewsId, parsedInewsId: InewsId): void {
+    if (inewsId.storyId !== parsedInewsId.storyId) {
+      throw new Error(`The given story id '${inewsId.storyId}' should match the parsed story id '${parsedInewsId.storyId}'.`)
     }
   }
 

@@ -6,6 +6,10 @@ import { InewsQueuePoolObserver } from '../interfaces/inews-queue-pool-observer'
 import { InewsStory } from '../entities/inews-story'
 import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 import { InewsQueueEmitter } from '../interfaces/inews-queue-emitter'
+import { InewsQueueDiffer } from '../interfaces/inews-queue-differ'
+import { InewsQueueRepository } from '../interfaces/inews-queue-repository'
+import { InewsQueue } from '../entities/inews-queue'
+import { InewsStoryRankResolver } from '../interfaces/inews-story-rank-resolver'
 
 export class PollingInewsQueueWatcher implements InewsQueueWatcher {
   private pollingTimer?: NodeJS.Timeout
@@ -18,6 +22,9 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
     private readonly connectionStateEmitter: ConnectionStateEmitter,
     private readonly inewsQueuePoolObserver: InewsQueuePoolObserver,
     private readonly inewsQueueEmitter: InewsQueueEmitter,
+    private readonly inewsQueueDiffer: InewsQueueDiffer,
+    private readonly inewsQueueRepository: InewsQueueRepository,
+    private readonly inewsStoryRankResolver: InewsStoryRankResolver,
     logger: Logger,
   ) {
     this.logger = logger.tag(this.constructor.name)
@@ -32,54 +39,94 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
 
   private schedulePolling(): void {
     this.clearPollingTimer()
-    this.pollData()
+    this.checkAndProcessQueues()
       .catch(error => this.logger.data(error).warn('Failed polling data.'))
       .finally(() => this.pollingTimer = setTimeout(() => this.schedulePolling(), this.pollingIntervalInMs))
   }
 
-  private async pollData(): Promise<void> {
-    const startTime: [number, number] = process.hrtime()
+  private async checkAndProcessQueues(): Promise<void> {
+    const startTime: bigint = process.hrtime.bigint()
     for (const queueId of this.queueIds) {
-      const changedStories: readonly InewsStory[] = await this.fetchChangedStoriesForQueue(queueId)
-      changedStories.forEach(story => this.inewsQueueEmitter.emitChangedInewsStory(story))
-      this.logger.debug(`${queueId} has ${changedStories.length} changed stories.`)
+      try {
+        await this.checkAndProcessQueue(queueId)
+      } catch (error) {
+        this.logger.data(error).error(`Failed getting updates for queue ${queueId}.`)
+      }
     }
-    const diff: [number, number] = process.hrtime(startTime)
-    this.logger.debug(`Pulling changes for ${this.queueIds.length} queues took ${diff[0] * 1000 + diff[1] / 1_000_000}ms.`)
+    const diff: bigint = process.hrtime.bigint() - startTime
+    this.logger.debug(`Pulling changes for ${this.queueIds.length} queues took ${Number(diff) / 1_000_000}ms.`)
   }
 
-  private storyMetadataCache: Record<string, InewsStoryMetadata> = {}
+  private async checkAndProcessQueue(queueId: string): Promise<void> {
+    const inewsQueue: InewsQueue = this.getInewsQueue(queueId)
+    const storyCache: ReadonlyMap<string, InewsStory> = new Map(inewsQueue.stories.map(story => [story.id, story]))
+    const storyMetadataSequence: readonly InewsStoryMetadata[] = await this.getStoryMetadataSequence(queueId)
 
-  private async fetchChangedStoriesForQueue(queueId: string): Promise<readonly InewsStory[]> {
-    const storyMetadataCollection: readonly InewsStoryMetadata[] = await this.inewsClient.getStoryMetadataForQueue(queueId)
-    let changedInewsStories: InewsStory[] = []
+    // Categorize
+    const metadataForNewStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForUncachedStories(storyMetadataSequence, storyCache)
+    const metadataForChangedStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForStoriesWithChangedContent(storyMetadataSequence, storyCache)
+    const metadataForMovedStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForMovedStories(storyMetadataSequence, storyCache)
+    const deletedStoryIds: readonly string[] = this.inewsQueueDiffer.getDeletedStoryIds(storyMetadataSequence, storyCache)
+
+    if (deletedStoryIds.length === 0 && metadataForNewStories.length === 0 && metadataForChangedStories.length === 0 && metadataForMovedStories.length === 0) {
+      return
+    }
+
+    // Compute ranks
+    const updatedRanks: ReadonlyMap<string, number> = this.inewsStoryRankResolver.getInewsStoryRanks(storyMetadataSequence, storyCache)
+
+    // Get stories
+    const newStories: readonly InewsStory[] = (await this.getStories(queueId, metadataForNewStories)).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
+    const changedStories: readonly InewsStory[] = (await this.getStories(queueId, metadataForChangedStories)).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
+    const movedStories: readonly InewsStory[] = metadataForMovedStories.map(storyMetadata => this.getInewsStoryWithUpdatedLocators(storyMetadata, storyCache)).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
+
+    // Emit data
+    deletedStoryIds.forEach(storyId => this.inewsQueueEmitter.emitDeletedInewsStory(queueId, storyId))
+    changedStories.forEach(story => this.inewsQueueEmitter.emitChangedInewsStory(story))
+    newStories.forEach(story => this.inewsQueueEmitter.emitCreatedInewsStory(story))
+    movedStories.forEach(story => this.inewsQueueEmitter.emitMovedInewsStory(story))
+
+    // Persist iNews queue
+    const alteredStories: Record<string, InewsStory> = Object.fromEntries(newStories.concat(changedStories).concat(movedStories).map(story => [story.id, story]))
+    this.inewsQueueRepository.setInewsQueue({
+      ...inewsQueue,
+      stories: storyMetadataSequence.map(storyMetadata => alteredStories[storyMetadata.id] ?? storyCache.get(storyMetadata.id)!),
+    })
+  }
+
+  private getInewsQueue(inewsQueueId: string): InewsQueue {
+    try {
+      return this.inewsQueueRepository.getInewsQueue(inewsQueueId)
+    } catch {
+      return {
+        id: inewsQueueId,
+        stories: [],
+      }
+    }
+  }
+
+  private getStoryMetadataSequence(queueId: string): Promise<readonly InewsStoryMetadata[]> {
+    return this.inewsClient.getStoryMetadataForQueue(queueId)
+  }
+
+  private async getStories(queueId: string, storyMetadataCollection: readonly InewsStoryMetadata[]): Promise<readonly InewsStory[]> {
+    let stories: InewsStory[] = []
     for (const storyMetadata of storyMetadataCollection) {
-      if (this.hasStoryContentChanged(storyMetadata)) {
-        changedInewsStories.push(await this.inewsClient.getStory(queueId, storyMetadata.id))
-      }
-      if (this.hasStoryChanged(storyMetadata)) {
-        this.storyMetadataCache[storyMetadata.id] = storyMetadata
-      }
+      stories.push(await this.inewsClient.getStory(queueId, { ...storyMetadata, storyId: storyMetadata.id }))
     }
-    return changedInewsStories
+    return stories
   }
 
-  private hasStoryContentChanged(storyMetadata: InewsStoryMetadata): boolean {
-    const previousStoryMetadata: InewsStoryMetadata | undefined = this.storyMetadataCache[storyMetadata.id]
-    if (!previousStoryMetadata) {
-      return true
+  private getInewsStoryWithUpdatedLocators(storyMetadata: InewsStoryMetadata, storyCache: ReadonlyMap<string, InewsStory>): InewsStory {
+    const cachedStory: InewsStory | undefined = storyCache.get(storyMetadata.id)
+    if (!cachedStory) {
+      throw new Error(`Uncached story with '${storyMetadata.id}' cannot be treated as a moved story.`)
     }
-
-    if (storyMetadata.versionLocator === previousStoryMetadata.versionLocator) {
-      return false
+    return {
+      ...cachedStory,
+      contentLocator: storyMetadata.contentLocator,
+      versionLocator: storyMetadata.versionLocator,
     }
-
-    return storyMetadata.contentLocator !== previousStoryMetadata.contentLocator
-  }
-
-  private hasStoryChanged(storyMetadata: InewsStoryMetadata): boolean {
-    const previousStoryMetadata: InewsStoryMetadata | undefined = this.storyMetadataCache[storyMetadata.id]
-    return storyMetadata.versionLocator !== previousStoryMetadata?.versionLocator
   }
 
   private clearPollingTimer(): void {

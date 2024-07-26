@@ -29,6 +29,7 @@ export class ServiceFacade {
       this.createInewsClient(),
       DomainEventFacade.createConnectionStateEmitter(),
       DomainEventFacade.createInewsQueuePoolObserver(),
+      DomainEventFacade.createInewsQueueEmitter(),
       LoggerFacade.createLogger(),
     )
   }
@@ -39,7 +40,7 @@ export class ServiceFacade {
   }
 
   public static createInewsStoryParser(): InewsStoryParser {
-    return new NsmlInewsStoryParser(new RegExpNsmlParser())
+    return new NsmlInewsStoryParser(new RegExpNsmlParser(), this.createInewsIdParser())
   }
 
   public static createInewsTimestampParser(): InewsTimestampParser {

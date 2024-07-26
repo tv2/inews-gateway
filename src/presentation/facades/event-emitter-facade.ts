@@ -1,5 +1,3 @@
-import { IngestEventEmitter } from '../interfaces/ingest-event-emitter'
-import { IngestEventService } from '../services/ingest-event-service'
 import { EventBuilderFacade } from './event-builder-facade'
 import { IngestEventObserver } from '../interfaces/ingest-event-observer'
 import { ConnectionStateEventObserver } from '../interfaces/connection-state-event-observer'
@@ -7,15 +5,18 @@ import { DomainEventAdapter } from '../services/domain-event-adapter'
 import { DomainEventFacade } from '../../business-logic/facades/domain-event-facade'
 
 export class EventEmitterFacade {
-  public static createIngestEventEmitter(): IngestEventEmitter {
-    return IngestEventService.getInstance(EventBuilderFacade.createIngestEventBuilder())
-  }
+  private static domainEventAdapater: DomainEventAdapter
 
   public static createIngestEventObserver(): IngestEventObserver {
-    return IngestEventService.getInstance(EventBuilderFacade.createIngestEventBuilder())
+    return this.getDomainEventAdapter()
   }
 
   public static createConnectionStateEventObserver(): ConnectionStateEventObserver {
-    return new DomainEventAdapter(DomainEventFacade.createConnectionStateObserver(), EventBuilderFacade.createConnectionStateEventBuilder())
+    return this.getDomainEventAdapter()
+  }
+
+  private static getDomainEventAdapter(): DomainEventAdapter {
+    this.domainEventAdapater ??= new DomainEventAdapter(DomainEventFacade.createConnectionStateObserver(), EventBuilderFacade.createConnectionStateEventBuilder(), DomainEventFacade.createInewsQueueObserver(), EventBuilderFacade.createIngestEventBuilder())
+    return this.domainEventAdapater
   }
 }

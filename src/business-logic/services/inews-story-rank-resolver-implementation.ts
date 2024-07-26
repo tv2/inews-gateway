@@ -2,7 +2,7 @@ import { InewsStory } from '../entities/inews-story'
 import { InewsStoryRankResolver } from '../interfaces/inews-story-rank-resolver'
 import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 
-export type RankEntry = readonly [string, number]
+type RankEntry = readonly [string, number]
 
 const RANK_STEP_SIZE: number = 1000
 

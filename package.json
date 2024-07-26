@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "lint-fix": "eslint --fix .",
     "validate": "yarn validate-dependencies && yarn validate-licenses",
-    "validate-dependencies": "yarn audit --level moderate --groups dependencies --recursive",
+    "validate-dependencies": "yarn npm audit --severity moderate --environment production --recursive",
     "validate-licenses": "license-checker --production --onlyAllow \"MIT;MIT/X11;BSD;BSD-3-Clause;BSD-2-Clause;ISC;Apache;Apache-2.0;WTFPL;CC-BY-3.0;CC-BY-4.0;CC0-1.0;Unlicense\"",
     "clean": "rimraf dist",
     "reset": "rimraf --glob dist node_modules coverage \"*.log\""

@@ -7,10 +7,7 @@ export type RankEntry = readonly [string, number]
 const RANK_STEP_SIZE: number = 1000
 
 export class InewsStoryRankResolverImplementation implements InewsStoryRankResolver {
-  public getInewsStoryRanks(
-    storyIds: readonly InewsStoryMetadata[],
-    cachedStories: ReadonlyMap<string, InewsStory>,
-  ): ReadonlyMap<string, number> {
+  public getInewsStoryRanks(storyIds: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): ReadonlyMap<string, number> {
     return new Map(this.getCachedRanks(storyIds, cachedStories).reduce(this.updateRankReducer.bind(this), []))
   }
 
@@ -27,24 +24,14 @@ export class InewsStoryRankResolverImplementation implements InewsStoryRankResol
     return cachedInewsStory.rank
   }
 
-  private updateRankReducer(
-    updatedRanks: readonly RankEntry[],
-    [storyId, cachedRank]: RankEntry,
-    index: number,
-    cachedRanks: readonly RankEntry[],
-  ): readonly RankEntry[] {
+  private updateRankReducer(updatedRanks: readonly RankEntry[], [storyId, cachedRank]: RankEntry, index: number, cachedRanks: readonly RankEntry[]): readonly RankEntry[] {
     return [
       ...updatedRanks,
       [storyId, this.getUpdatedRank(cachedRank, index, updatedRanks, cachedRanks)],
     ]
   }
 
-  private getUpdatedRank(
-    cachedRank: number,
-    index: number,
-    updatedRanks: readonly RankEntry[],
-    cachedRanks: readonly RankEntry[],
-  ): number {
+  private getUpdatedRank(cachedRank: number, index: number, updatedRanks: readonly RankEntry[], cachedRanks: readonly RankEntry[]): number {
     const previousRank: number = updatedRanks[index - 1]?.[1] ?? 0
     const nextRank: number | undefined = this.getNextRankLargerThanPreviousRank(cachedRanks, index, previousRank)
 

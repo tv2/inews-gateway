@@ -5,21 +5,23 @@ import { EntityTestFactory } from '../factories/entity-test-factory'
 
 describe(InewsQueueDifferImplementation.name, () => {
   describe(InewsQueueDifferImplementation.prototype.getMetadataForUncachedStories, () => {
-    describe('when all stories are cached', () => it('returns an empty array', () => {
-      const storyMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata] = [
-        EntityTestFactory.createInewsStoryMetadata(),
-        EntityTestFactory.createInewsStoryMetadata(),
-      ]
-      const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
-        [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory(storyMetadataSequence[0])],
-        [storyMetadataSequence[1].id, EntityTestFactory.createInewsStory(storyMetadataSequence[1])],
-      ])
-      const testee: InewsQueueDifferImplementation = createTestee()
+    describe('when all stories are cached', () => {
+      it('returns an empty array', () => {
+        const storyMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata] = [
+          EntityTestFactory.createInewsStoryMetadata(),
+          EntityTestFactory.createInewsStoryMetadata(),
+        ]
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+          [storyMetadataSequence[0].id, EntityTestFactory.createInewsStory(storyMetadataSequence[0])],
+          [storyMetadataSequence[1].id, EntityTestFactory.createInewsStory(storyMetadataSequence[1])],
+        ])
+        const testee: InewsQueueDifferImplementation = createTestee()
 
-      const result: readonly InewsStoryMetadata[] = testee.getMetadataForUncachedStories(storyMetadataSequence, cachedStories)
+        const result: readonly InewsStoryMetadata[] = testee.getMetadataForUncachedStories(storyMetadataSequence, cachedStories)
 
-      expect(result).toMatchObject([])
-    }))
+        expect(result).toMatchObject([])
+      })
+    })
 
     describe('when some stories are uncached', () => {
       it('returns metadata for the uncached stories', () => {

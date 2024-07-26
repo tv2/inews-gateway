@@ -11,6 +11,11 @@ import { FtpClientFacade } from '../../data-access/facades/ftp-client-facade'
 import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
 import { InewsFtpTimestampParser } from '../services/inews-ftp-timestamp-parser'
 import { DomainEventFacade } from './domain-event-facade'
+import { InewsStoryParser } from '../interfaces/inews-story-parser'
+import { NsmlInewsStoryParser } from '../services/nsml-inews-story-parser'
+import { RegExpNsmlParser } from '../services/reg-exp-nsml-parser'
+import { InewsIdParser } from '../interfaces/inews-id-parser'
+import { InewsIdParserImplementation } from '../services/inews-id-parser-implementation'
 
 export class ServiceFacade {
   public static createApplicationConfigurationService(): ConfigurationService<ApplicationConfiguration> {
@@ -19,15 +24,29 @@ export class ServiceFacade {
 
   public static createInewsQueueWatcher(): InewsQueueWatcher {
     const applicationConfiguration: ApplicationConfiguration = this.createApplicationConfigurationService().getApplicationConfiguration()
-    return new PollingInewsQueueWatcher(applicationConfiguration.inewsPollingIntervalInMs, this.createInewsClient(), DomainEventFacade.createConnectionStateEmitter(), LoggerFacade.createLogger())
+    return new PollingInewsQueueWatcher(
+      applicationConfiguration.inewsPollingIntervalInMs,
+      this.createInewsClient(),
+      DomainEventFacade.createConnectionStateEmitter(),
+      DomainEventFacade.createInewsQueuePoolObserver(),
+      LoggerFacade.createLogger(),
+    )
   }
 
   public static createInewsClient(): InewsClient {
     const applicationConfiguration: ApplicationConfiguration = this.createApplicationConfigurationService().getApplicationConfiguration()
-    return new FtpInewsClient(FtpClientFacade.createRoundRobinFtpClientPool(applicationConfiguration.inewsFtpConnectionConfigurations), this.createInewsTimestampParser())
+    return new FtpInewsClient(FtpClientFacade.createRoundRobinFtpClientPool(applicationConfiguration.inewsFtpConnectionConfigurations), this.createInewsTimestampParser(), this.createInewsStoryParser(), this.createInewsIdParser(), LoggerFacade.createLogger())
+  }
+
+  public static createInewsStoryParser(): InewsStoryParser {
+    return new NsmlInewsStoryParser(new RegExpNsmlParser())
   }
 
   public static createInewsTimestampParser(): InewsTimestampParser {
     return new InewsFtpTimestampParser()
+  }
+
+  public static createInewsIdParser(): InewsIdParser {
+    return new InewsIdParserImplementation()
   }
 }

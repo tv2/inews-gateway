@@ -4,12 +4,13 @@ import * as basicFtp from 'basic-ftp'
 import { PassThrough } from 'node:stream'
 import { Logger } from '../../logger/logger'
 import { FileMetadata } from '../value-objects/file-metadata'
+import { ConnectionState } from '../value-objects/connection-state'
 import { ConnectionStatus } from '../enums/connection-status'
 
 const CONNECTION_TIMEOUT_DURATION_IN_MS: number = 4000
 
 export class BasicFtpFtpClient implements FtpClient {
-  private onConnectionStatusChangedCallback?: (connectionStatus: ConnectionStatus) => void
+  private onConnectionStateChangedCallback?: (connectionStatus: ConnectionState) => void
   private readonly ftpClient: basicFtp.Client = new basicFtp.Client(CONNECTION_TIMEOUT_DURATION_IN_MS)
   private readonly logger: Logger
 
@@ -22,16 +23,16 @@ export class BasicFtpFtpClient implements FtpClient {
 
   public async connect(): Promise<void> {
     try {
-      this.onConnectionStatusChangedCallback?.(ConnectionStatus.CONNECTING)
+      this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.CONNECTING })
 
       await this.connectWithConfiguration()
 
-      this.onConnectionStatusChangedCallback?.(ConnectionStatus.CONNECTED)
+      this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.CONNECTED })
       this.logger.info(`Connected to FTP server ${this.configuration.host}:${this.configuration.port}.`)
 
       this.configureFtpSocketToListenForDeadConnection()
     } catch (error) {
-      this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+      this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.DISCONNECTED, message: error instanceof Error ? error.message : 'Unknown' })
       throw error
     }
   }
@@ -49,12 +50,12 @@ export class BasicFtpFtpClient implements FtpClient {
   private configureFtpSocketToListenForDeadConnection(): void {
     this.ftpClient.ftp.socket.on('timeout', () => {
       this.logger.info(`The connection to the FTP server ${this.configuration.host}:${this.configuration.port} timed out.`)
-      this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+      this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.DISCONNECTED, message: `The connection to ${this.configuration.host}:${this.configuration.port} timed out.` })
     })
 
     this.ftpClient.ftp.socket.on('end', () => {
       this.logger.info(`FTP server ${this.configuration.host}:${this.configuration.port} terminated the connection.`)
-      this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+      this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.DISCONNECTED, message: `The connection to ${this.configuration.host}:${this.configuration.port} was terminated by the server.` })
     })
   }
 
@@ -62,12 +63,12 @@ export class BasicFtpFtpClient implements FtpClient {
     return !this.ftpClient.closed
   }
 
-  public setOnConnectionStatusChangedCallback(onConnectionStatusChangedCallback: (connectionStatus: ConnectionStatus) => void): void {
-    this.onConnectionStatusChangedCallback = onConnectionStatusChangedCallback
+  public setOnConnectionStateChangedCallback(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void {
+    this.onConnectionStateChangedCallback = onConnectionStateChangedCallback
   }
 
-  public clearOnConnectionStatusChangedCallback(): void {
-    delete this.onConnectionStatusChangedCallback
+  public clearOnConnectionStateChangedCallback(): void {
+    delete this.onConnectionStateChangedCallback
   }
 
   public async changeWorkingDirectory(path: string): Promise<void> {
@@ -98,7 +99,7 @@ export class BasicFtpFtpClient implements FtpClient {
       return
     }
     this.ftpClient.close()
-    this.onConnectionStatusChangedCallback?.(ConnectionStatus.DISCONNECTED)
+    this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.DISCONNECTED, message: `The connection to ${this.configuration.host}:${this.configuration.port} was closed.` })
     this.logger.info(`Disconnected from FTP server ${this.configuration.host}:${this.configuration.port}.`)
     return Promise.resolve()
   }

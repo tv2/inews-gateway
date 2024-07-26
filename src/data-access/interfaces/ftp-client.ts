@@ -1,5 +1,5 @@
 import { FileMetadata } from '../value-objects/file-metadata'
-import { ConnectionStatus } from '../enums/connection-status'
+import { ConnectionState } from '../value-objects/connection-state'
 
 export interface FtpClient {
   connect(): Promise<void>
@@ -7,7 +7,7 @@ export interface FtpClient {
   changeWorkingDirectory(path: string): Promise<void>
   listFiles(): Promise<readonly FileMetadata[]>
   getFile(filename: string): Promise<string>
-  setOnConnectionStatusChangedCallback(onConnectionStatusChangedCallback: (connectionStatus: ConnectionStatus) => void): void
-  clearOnConnectionStatusChangedCallback(): void
+  setOnConnectionStateChangedCallback(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void
+  clearOnConnectionStateChangedCallback(): void
   disconnect(): Promise<void>
 }

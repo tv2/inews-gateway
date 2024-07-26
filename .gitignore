@@ -9,6 +9,9 @@ dist/
 # Ignore VSCode specifics
 .vscode
 
+# DotEnv
+.env*
+
 # Yarn non-zero install
 .pnp.*
 .yarn/*

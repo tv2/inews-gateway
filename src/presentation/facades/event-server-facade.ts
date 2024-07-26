@@ -9,6 +9,7 @@ export class EventServerFacade {
     return new ClientEventServer(
       new WebsocketServer(LoggerFacade.createLogger()),
       EventEmitterFacade.createIngestEventObserver(),
+      EventEmitterFacade.createConnectionStateEventObserver(),
       LoggerFacade.createLogger(),
     )
   }

@@ -3,10 +3,10 @@ import { FileMetadata } from '../../data-access/value-objects/file-metadata'
 import { StoryMetadata } from '../value-objects/story-metadata'
 import { InewsClient } from '../interfaces/inews-client'
 import { InewsTimestampParser } from '../interfaces/inews-timestamp-parser'
-import { ConnectionStatus } from '../../data-access/enums/connection-status'
+import { ConnectionState } from '../../data-access/value-objects/connection-state'
 
 export class FtpInewsClient implements InewsClient {
-  private readonly onConnectionStatusChangedCallbacks: ((connectionStatus: ConnectionStatus) => void)[] = []
+  private readonly onConnectionStateChangedCallbacks: ((connectionState: ConnectionState) => void)[] = []
 
   public constructor(
     private readonly ftpClient: FtpClient,
@@ -14,12 +14,12 @@ export class FtpInewsClient implements InewsClient {
   ) {}
 
   public async connect(): Promise<void> {
-    this.ftpClient.setOnConnectionStatusChangedCallback(connectionStatus => this.emitConnectionStatus(connectionStatus))
+    this.ftpClient.setOnConnectionStateChangedCallback(connectionState => this.emitConnectionState(connectionState))
     await this.ftpClient.connect()
   }
 
-  private emitConnectionStatus(connectionStatus: ConnectionStatus): void {
-    this.onConnectionStatusChangedCallbacks.forEach(callback => callback(connectionStatus))
+  private emitConnectionState(connectionState: ConnectionState): void {
+    this.onConnectionStateChangedCallbacks.forEach(callback => callback(connectionState))
   }
 
   public async getStoryMetadataForQueue(queueId: string): Promise<readonly StoryMetadata[]> {
@@ -52,12 +52,12 @@ export class FtpInewsClient implements InewsClient {
     return fileMetadata.name.trim().split(' ').slice(1).join(' ') ?? 'unknown name'
   }
 
-  public subscribeToConnectionStatus(onConnectionStatusChangedCallback: (connectionStatus: ConnectionStatus) => void): void {
-    this.onConnectionStatusChangedCallbacks.push(onConnectionStatusChangedCallback)
+  public subscribeToConnectionState(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void {
+    this.onConnectionStateChangedCallbacks.push(onConnectionStateChangedCallback)
   }
 
   public async disconnect(): Promise<void> {
     await this.ftpClient.disconnect()
-    this.ftpClient.clearOnConnectionStatusChangedCallback()
+    this.ftpClient.clearOnConnectionStateChangedCallback()
   }
 }

@@ -70,7 +70,7 @@ export class ClientEventServer implements EventServer {
     this.logger.data(this.getInewsQueuePool()).debug(`${this.queueSubscriptions.size} queue(s) are registered.`)
     this.emitInewsQueuePool()
     this.sendTypedEventToClient(clientId, this.lastConnectionStateEvent)
-    this.sendQueueStateToClient(clientId, clientConfiguration.queueIds)
+    this.sendQueueStatesToClient(clientId, clientConfiguration.queueIds)
   }
 
   private getClientConfiguration(options: Record<string, unknown>): ClientConfiguration {
@@ -109,14 +109,16 @@ export class ClientEventServer implements EventServer {
     this.clientConnectionServer.sendMessageToClient(clientId, JSON.stringify(typedEvent))
   }
 
-  private sendQueueStateToClient(clientId: string, queueIds: string[]): void {
-    for (const queueId of queueIds) {
-      try {
-        const queue: InewsQueue = this.inewsQueueRepository.getInewsQueue(queueId)
-        const event: IngestEvent = this.ingestEventBuilder.buildInewsQueueEvent(queue)
-        this.sendTypedEventToClient(clientId, event)
-      } catch {}
-    }
+  private sendQueueStatesToClient(clientId: string, queueIds: string[]): void {
+    queueIds.forEach(queueId => this.sendQueueStateToClient(clientId, queueId))
+  }
+
+  private sendQueueStateToClient(clientId: string, queueId: string): void {
+    try {
+      const queue: InewsQueue = this.inewsQueueRepository.getInewsQueue(queueId)
+      const event: IngestEvent = this.ingestEventBuilder.buildInewsQueueEvent(queue)
+      this.sendTypedEventToClient(clientId, event)
+    } catch {}
   }
 
   private deregisterClient(clientId: string): void {

@@ -1,17 +1,21 @@
 import { LoggerFacade } from '../../logger/logger-facade'
 import { ClientEventServer } from '../services/client-event-server'
 import { WebsocketServer } from '../services/websocket-server'
-import { EventEmitterFacade } from './event-emitter-facade'
 import { EventServer } from '../interfaces/event-server'
 import { DomainEventFacade } from '../../business-logic/facades/domain-event-facade'
+import { EventBuilderFacade } from './event-builder-facade'
+import { ServiceFacade } from '../../business-logic/facades/service-facade'
 
 export class EventServerFacade {
   public static createWebsocketEventServer(): EventServer {
     return new ClientEventServer(
       new WebsocketServer(LoggerFacade.createLogger()),
-      EventEmitterFacade.createIngestEventObserver(),
-      EventEmitterFacade.createConnectionStateEventObserver(),
+      DomainEventFacade.createConnectionStateObserver(),
+      EventBuilderFacade.createConnectionStateEventBuilder(),
+      DomainEventFacade.createInewsQueueObserver(),
+      EventBuilderFacade.createIngestEventBuilder(),
       DomainEventFacade.createInewsQueuePoolEmitter(),
+      ServiceFacade.createInewsQueueRepository(),
       LoggerFacade.createLogger(),
     )
   }

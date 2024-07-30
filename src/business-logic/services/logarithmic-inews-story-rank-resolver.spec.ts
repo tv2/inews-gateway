@@ -1,11 +1,11 @@
-import { InewsStoryRankResolverImplementation } from './inews-story-rank-resolver-implementation'
+import { LogarithmicInewsStoryRankResolver } from './logarithmic-inews-story-rank-resolver'
 import { InewsStoryRankResolver } from '../interfaces/inews-story-rank-resolver'
 import { EntityTestFactory } from '../factories/entity-test-factory'
 import { InewsStory } from '../entities/inews-story'
 import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 
-describe(InewsStoryRankResolverImplementation.name, () => {
-  describe(InewsStoryRankResolverImplementation.prototype.getInewsStoryRanks.name, () => {
+describe(LogarithmicInewsStoryRankResolver.name, () => {
+  describe(LogarithmicInewsStoryRankResolver.prototype.getInewsStoryRanks.name, () => {
     describe('when no stories are cached', () => {
       it('assigns ranks linear', () => {
         const testee: InewsStoryRankResolver = createTestee()
@@ -28,7 +28,7 @@ describe(InewsStoryRankResolverImplementation.name, () => {
 
     describe('when some stories are cached', () => {
       describe('when the uncached stories are in between cached stories', () => {
-        it('fits in the uncached stories in between the cached stories', () => {
+        it('fits the uncached stories in between the cached stories', () => {
           const testee: InewsStoryRankResolver = createTestee()
           const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
             EntityTestFactory.createInewsStoryMetadata(),
@@ -232,5 +232,5 @@ describe(InewsStoryRankResolverImplementation.name, () => {
 })
 
 function createTestee(): InewsStoryRankResolver {
-  return new InewsStoryRankResolverImplementation()
+  return new LogarithmicInewsStoryRankResolver()
 }

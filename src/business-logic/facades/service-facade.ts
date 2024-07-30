@@ -21,9 +21,11 @@ import { InewsIdParserImplementation } from '../services/inews-id-parser-impleme
 import { InewsQueueRepository } from '../interfaces/inews-queue-repository'
 import { InMemoryInewsQueueRepository } from '../services/in-memory-inews-queue-repository'
 import { InewsStoryRankResolver } from '../interfaces/inews-story-rank-resolver'
-import { InewsStoryRankResolverImplementation } from '../services/inews-story-rank-resolver-implementation'
+import { LogarithmicInewsStoryRankResolver } from '../services/logarithmic-inews-story-rank-resolver'
 
 export class ServiceFacade {
+  private static inewsQueueRepository: InewsQueueRepository
+
   public static createApplicationConfigurationService(): ConfigurationService<ApplicationConfiguration> {
     return new ApplicationConfigurationService(RepositoryFacade.createApplicationConfigurationRepository())
   }
@@ -65,10 +67,11 @@ export class ServiceFacade {
   }
 
   public static createInewsQueueRepository(): InewsQueueRepository {
-    return new InMemoryInewsQueueRepository()
+    this.inewsQueueRepository ??= new InMemoryInewsQueueRepository()
+    return this.inewsQueueRepository
   }
 
   public static createInewsStoryRankResolver(): InewsStoryRankResolver {
-    return new InewsStoryRankResolverImplementation()
+    return new LogarithmicInewsStoryRankResolver()
   }
 }

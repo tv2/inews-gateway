@@ -5,8 +5,9 @@ import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 type RankEntry = readonly [string, number]
 
 const RANK_STEP_SIZE: number = 1000
+const RANK_FITTING_LOG_BASE: number = 2
 
-export class InewsStoryRankResolverImplementation implements InewsStoryRankResolver {
+export class LogarithmicInewsStoryRankResolver implements InewsStoryRankResolver {
   public getInewsStoryRanks(storyIds: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): ReadonlyMap<string, number> {
     return new Map(this.getCachedRanks(storyIds, cachedStories).reduce(this.updateRankReducer.bind(this), []))
   }
@@ -53,7 +54,7 @@ export class InewsStoryRankResolverImplementation implements InewsStoryRankResol
   }
 
   private getRankInBetween(previousRank: number, maybeNextRank?: number): number {
-    const nextRank = maybeNextRank ?? previousRank + 2 * RANK_STEP_SIZE
-    return previousRank + (nextRank - previousRank) / 2
+    const nextRank = maybeNextRank ?? previousRank + RANK_FITTING_LOG_BASE * RANK_STEP_SIZE
+    return previousRank + (nextRank - previousRank) / RANK_FITTING_LOG_BASE
   }
 }

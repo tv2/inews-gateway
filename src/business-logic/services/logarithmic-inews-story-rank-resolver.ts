@@ -4,12 +4,11 @@ import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 
 type RankEntry = readonly [string, number]
 
-const RANK_STEP_SIZE: number = 1000
-const RANK_FITTING_LOG_BASE: number = 2
+const RANK_STEP_SIZE: number = 10
 
 export class LogarithmicInewsStoryRankResolver implements InewsStoryRankResolver {
-  public getInewsStoryRanks(storyIds: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): ReadonlyMap<string, number> {
-    return new Map(this.getCachedRanks(storyIds, cachedStories).reduce(this.updateRankReducer.bind(this), []))
+  public getInewsStoryRanks(inewsStoryMetadata: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): ReadonlyMap<string, number> {
+    return new Map(this.getCachedRanks(inewsStoryMetadata, cachedStories).reduce(this.updateRankReducer.bind(this), []))
   }
 
   private getCachedRanks(inewsStoryMetadataSequence: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): readonly RankEntry[] {
@@ -33,28 +32,39 @@ export class LogarithmicInewsStoryRankResolver implements InewsStoryRankResolver
   }
 
   private getUpdatedRank(cachedRank: number, index: number, updatedRanks: readonly RankEntry[], cachedRanks: readonly RankEntry[]): number {
-    const previousRank: number = updatedRanks[index - 1]?.[1] ?? 0
-    const nextRank: number | undefined = this.getNextRankLargerThanPreviousRank(cachedRanks, index, previousRank)
+    const previousRankIndex: number = index - 1
+    const previousRank: number = updatedRanks[previousRankIndex]?.[1] ?? 0
+    const nextRankAndIndex: { rank: number, index: number } | undefined = this.getIndexAndRankForNextRankLargerThanPreviousRank(cachedRanks, index, previousRank)
+    const nextRank: number | undefined = nextRankAndIndex?.rank
+    const stepResolution: number = nextRankAndIndex ? nextRankAndIndex.index - previousRankIndex : 2
 
     if (cachedRank <= previousRank) {
-      return this.getRankInBetween(previousRank, nextRank)
+      return this.getRankInBetween(previousRank, nextRank, stepResolution)
     }
 
     if (nextRank && cachedRank >= nextRank) {
-      return this.getRankInBetween(previousRank, nextRank)
+      return this.getRankInBetween(previousRank, nextRank, stepResolution)
     }
 
     return cachedRank
   }
 
-  private getNextRankLargerThanPreviousRank(cachedRanks: readonly RankEntry[], index: number, previousRank: number): number | undefined {
-    return cachedRanks
-      .slice(index + 1)
-      .find(([, cachedNextRank]) => cachedNextRank > previousRank)?.[1]
+  private getIndexAndRankForNextRankLargerThanPreviousRank(cachedRankEntries: readonly RankEntry[], index: number, previousRank: number): { rank: number, index: number } | undefined {
+    const startIndex: number = index + 1
+    const nextRankIndex: number = startIndex + cachedRankEntries.slice(startIndex).findIndex(([, cachedNextRank]: RankEntry) => cachedNextRank > previousRank)
+    if (nextRankIndex < startIndex) {
+      return
+    }
+    const nextRankEntry: RankEntry = cachedRankEntries[nextRankIndex]!
+    return {
+      index: nextRankIndex,
+      rank: nextRankEntry[1],
+    }
   }
 
-  private getRankInBetween(previousRank: number, maybeNextRank?: number): number {
-    const nextRank = maybeNextRank ?? previousRank + RANK_FITTING_LOG_BASE * RANK_STEP_SIZE
-    return previousRank + (nextRank - previousRank) / RANK_FITTING_LOG_BASE
+  private getRankInBetween(previousRank: number, maybeNextRank: number | undefined, resolution: number): number {
+    const nextRank: number = maybeNextRank ?? previousRank + resolution * RANK_STEP_SIZE
+    const rankIncreaseFromPrevious: number = Math.floor((nextRank - previousRank) / resolution)
+    return previousRank + Math.max(1, rankIncreaseFromPrevious)
   }
 }

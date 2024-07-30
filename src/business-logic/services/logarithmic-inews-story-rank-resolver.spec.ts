@@ -7,225 +7,227 @@ import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 describe(LogarithmicInewsStoryRankResolver.name, () => {
   describe(LogarithmicInewsStoryRankResolver.prototype.getInewsStoryRanks.name, () => {
     describe('when no stories are cached', () => {
-      it('assigns ranks linear', () => {
+      it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
         const testee: InewsStoryRankResolver = createTestee()
-        const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
-          EntityTestFactory.createInewsStoryMetadata(),
-          EntityTestFactory.createInewsStoryMetadata(),
-          EntityTestFactory.createInewsStoryMetadata(),
-        ]
+        const inewsStoryMetadataSequence: readonly InewsStoryMetadata[] = Array(10_000).fill(null).map((_, index): InewsStoryMetadata => EntityTestFactory.createInewsStoryMetadata({ id: `story-${index}` }))
         const cachedStories: ReadonlyMap<string, InewsStory> = new Map()
 
-        const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryIdSequence, cachedStories)
+        const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
 
-        expect(Array.from(result.entries())).toMatchObject([
-          [inewsStoryIdSequence[0].id, 1000],
-          [inewsStoryIdSequence[1].id, 2000],
-          [inewsStoryIdSequence[2].id, 3000],
-        ])
+        expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+        expect(result.size).toBe(new Set(result.values()).size)
       })
     })
 
     describe('when some stories are cached', () => {
       describe('when the uncached stories are in between cached stories', () => {
-        it('fits the uncached stories in between the cached stories', () => {
+        it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
           const testee: InewsStoryRankResolver = createTestee()
-          const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
+          const inewsStoryMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-e' }),
           ]
           const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
-            [inewsStoryIdSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[0], rank: 2000 })],
-            [inewsStoryIdSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[4], rank: 4000 })],
+            [inewsStoryMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0], rank: 2000 })],
+            [inewsStoryMetadataSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[4], rank: 4000 })],
           ])
 
-          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryIdSequence, cachedStories)
+          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
 
-          expect(Array.from(result.entries())).toMatchObject([
-            [inewsStoryIdSequence[0].id, 2000],
-            [inewsStoryIdSequence[1].id, 3000],
-            [inewsStoryIdSequence[2].id, 3500],
-            [inewsStoryIdSequence[3].id, 3750],
-            [inewsStoryIdSequence[4].id, 4000],
-          ])
+          expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+          expect(result.size).toBe(new Set(result.values()).size)
         })
       })
 
       describe('when the uncached stories are at the start of the story sequence', () => {
-        it('fits the uncached stories in between rank 0 and the rank of the first cached story', () => {
+        it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
           const testee: InewsStoryRankResolver = createTestee()
-          const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
+          const inewsStoryMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-e' }),
           ]
           const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
-            [inewsStoryIdSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[3], rank: 2000 })],
-            [inewsStoryIdSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[4], rank: 6000 })],
+            [inewsStoryMetadataSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[3], rank: 2000 })],
+            [inewsStoryMetadataSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[4], rank: 6000 })],
           ])
 
-          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryIdSequence, cachedStories)
+          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
 
-          expect(Array.from(result.entries())).toMatchObject([
-            [inewsStoryIdSequence[0].id, 1000],
-            [inewsStoryIdSequence[1].id, 1500],
-            [inewsStoryIdSequence[2].id, 1750],
-            [inewsStoryIdSequence[3].id, 2000],
-            [inewsStoryIdSequence[4].id, 6000],
-          ])
+          expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+          expect(result.size).toBe(new Set(result.values()).size)
         })
       })
 
       describe('when the uncached stories are at the end of the story sequence', () => {
-        it('the uncached stories are assigned ranks linearly increasing from the rank of the highest ranked cached story', () => {
+        it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
           const testee: InewsStoryRankResolver = createTestee()
-          const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
+          const inewsStoryMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-e' }),
           ]
           const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
-            [inewsStoryIdSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[0], rank: 2000 })],
-            [inewsStoryIdSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[1], rank: 6000 })],
+            [inewsStoryMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0], rank: 2000 })],
+            [inewsStoryMetadataSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[1], rank: 6000 })],
           ])
 
-          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryIdSequence, cachedStories)
+          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
 
-          expect(Array.from(result.entries())).toMatchObject([
-            [inewsStoryIdSequence[0].id, 2000],
-            [inewsStoryIdSequence[1].id, 6000],
-            [inewsStoryIdSequence[2].id, 7000],
-            [inewsStoryIdSequence[3].id, 8000],
-            [inewsStoryIdSequence[4].id, 9000],
-          ])
+          expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+          expect(result.size).toBe(new Set(result.values()).size)
         })
       })
 
       describe('when the highest ranked cached stories is moved into the middle of story sequence', () => {
-        it('the highest ranked story is given a new rank in between the ranks of the stories that it was placed in between', () => {
+        it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
           const testee: InewsStoryRankResolver = createTestee()
-          const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
+          const inewsStoryMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-e' }),
           ]
           const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
-            [inewsStoryIdSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[0], rank: 1000 })],
-            [inewsStoryIdSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[1], rank: 2000 })],
-            [inewsStoryIdSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[2], rank: 5000, versionLocator: 'newVersion' })],
-            [inewsStoryIdSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[3], rank: 3000 })],
-            [inewsStoryIdSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[4], rank: 4000 })],
+            [inewsStoryMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0], rank: 1000 })],
+            [inewsStoryMetadataSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[1], rank: 2000 })],
+            [inewsStoryMetadataSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[2], rank: 5000, versionLocator: 'newVersion' })],
+            [inewsStoryMetadataSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[3], rank: 3000 })],
+            [inewsStoryMetadataSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[4], rank: 4000 })],
           ])
 
-          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryIdSequence, cachedStories)
+          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
 
-          expect(Array.from(result.entries())).toMatchObject([
-            [inewsStoryIdSequence[0].id, 1000],
-            [inewsStoryIdSequence[1].id, 2000],
-            [inewsStoryIdSequence[2].id, 2500],
-            [inewsStoryIdSequence[3].id, 3000],
-            [inewsStoryIdSequence[4].id, 4000],
-          ])
+          expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+          expect(result.size).toBe(new Set(result.values()).size)
         })
       })
 
       describe('when multiple high-ranked stories are moved into the middle of the story sequence', () => {
-        it('fits the high-ranked stories ranks in between the surround stories ranks', () => {
+        it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
           const testee: InewsStoryRankResolver = createTestee()
-          const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
+          const inewsStoryMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-e' }),
           ]
           const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
-            [inewsStoryIdSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[0], rank: 1000 })],
-            [inewsStoryIdSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[1], rank: 4000, versionLocator: 'newVersion' })],
-            [inewsStoryIdSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[2], rank: 5000, versionLocator: 'newVersion' })],
-            [inewsStoryIdSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[3], rank: 2000 })],
-            [inewsStoryIdSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[4], rank: 3000 })],
+            [inewsStoryMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0], rank: 1000 })],
+            [inewsStoryMetadataSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[1], rank: 4000, versionLocator: 'newVersion' })],
+            [inewsStoryMetadataSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[2], rank: 5000, versionLocator: 'newVersion' })],
+            [inewsStoryMetadataSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[3], rank: 2000 })],
+            [inewsStoryMetadataSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[4], rank: 3000 })],
           ])
 
-          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryIdSequence, cachedStories)
+          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
 
-          expect(Array.from(result.entries())).toMatchObject([
-            [inewsStoryIdSequence[0].id, 1000],
-            [inewsStoryIdSequence[1].id, 1500],
-            [inewsStoryIdSequence[2].id, 1750],
-            [inewsStoryIdSequence[3].id, 2000],
-            [inewsStoryIdSequence[4].id, 3000],
-          ])
+          expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+          expect(result.size).toBe(new Set(result.values()).size)
         })
       })
 
       describe('when the lowest ranked cached stories is moved into the middle of story sequence', () => {
-        it('the lowest ranked story is given a new rank in between the ranks of the stories that it was placed in between', () => {
+        it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
           const testee: InewsStoryRankResolver = createTestee()
-          const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
+          const inewsStoryMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-e' }),
           ]
           const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
-            [inewsStoryIdSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[0], rank: 2000 })],
-            [inewsStoryIdSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[1], rank: 3000 })],
-            [inewsStoryIdSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[2], rank: 1000, versionLocator: 'newVersion' })],
-            [inewsStoryIdSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[3], rank: 4000 })],
-            [inewsStoryIdSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[4], rank: 5000 })],
+            [inewsStoryMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0], rank: 2000 })],
+            [inewsStoryMetadataSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[1], rank: 3000 })],
+            [inewsStoryMetadataSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[2], rank: 1000, versionLocator: 'newVersion' })],
+            [inewsStoryMetadataSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[3], rank: 4000 })],
+            [inewsStoryMetadataSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[4], rank: 5000 })],
           ])
 
-          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryIdSequence, cachedStories)
+          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
 
-          expect(Array.from(result.entries())).toMatchObject([
-            [inewsStoryIdSequence[0].id, 2000],
-            [inewsStoryIdSequence[1].id, 3000],
-            [inewsStoryIdSequence[2].id, 3500],
-            [inewsStoryIdSequence[3].id, 4000],
-            [inewsStoryIdSequence[4].id, 5000],
-          ])
+          expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+          expect(result.size).toBe(new Set(result.values()).size)
         })
       })
 
       describe('when multiple low-ranked stories are moved into the middle of the story sequence', () => {
-        it('fits the low-ranked stories ranks in between the surround stories ranks', () => {
+        it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
           const testee: InewsStoryRankResolver = createTestee()
-          const inewsStoryIdSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
-            EntityTestFactory.createInewsStoryMetadata(),
+          const inewsStoryMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-e' }),
           ]
           const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
-            [inewsStoryIdSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[0], rank: 3000 })],
-            [inewsStoryIdSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[1], rank: 1000, versionLocator: 'newVersion' })],
-            [inewsStoryIdSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[2], rank: 2000, versionLocator: 'newVersion' })],
-            [inewsStoryIdSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[3], rank: 4000 })],
-            [inewsStoryIdSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryIdSequence[4], rank: 5000 })],
+            [inewsStoryMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0], rank: 3000 })],
+            [inewsStoryMetadataSequence[1].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[1], rank: 1000, versionLocator: 'newVersion' })],
+            [inewsStoryMetadataSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[2], rank: 2000, versionLocator: 'newVersion' })],
+            [inewsStoryMetadataSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[3], rank: 4000 })],
+            [inewsStoryMetadataSequence[4].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[4], rank: 5000 })],
           ])
 
-          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryIdSequence, cachedStories)
+          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
 
-          expect(Array.from(result.entries())).toMatchObject([
-            [inewsStoryIdSequence[0].id, 3000],
-            [inewsStoryIdSequence[1].id, 3500],
-            [inewsStoryIdSequence[2].id, 3750],
-            [inewsStoryIdSequence[3].id, 4000],
-            [inewsStoryIdSequence[4].id, 5000],
-          ])
+          expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+          expect(result.size).toBe(new Set(result.values()).size)
         })
+      })
+
+      describe('when more stories are created, change or moved than there are available ranks', () => {
+        it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
+          const testee: InewsStoryRankResolver = createTestee()
+          const inewsStoryMetadataSequence: readonly InewsStoryMetadata[] = [
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+            ...Array(10_000).fill(null).map((_, index): InewsStoryMetadata => EntityTestFactory.createInewsStoryMetadata({ id: `story-${index}` })),
+            EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+          ]
+          const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+            [inewsStoryMetadataSequence[0]!.id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0]!, rank: 1000 })],
+            [inewsStoryMetadataSequence[10_001]!.id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[10_001]!, rank: 1100 })],
+          ])
+
+          const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
+
+          expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+          expect(new Set(result.values()).size).toBe(inewsStoryMetadataSequence.length)
+        })
+      })
+    })
+
+    describe('when the number of created, changed and moved stories is lesser than the available ranks', () => {
+      it('does not alter the rank of untouched segments', () => {
+        const testee: InewsStoryRankResolver = createTestee()
+        const inewsStoryMetadataSequence: readonly [InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata, InewsStoryMetadata] = [
+          EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+          EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+          EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+          EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+        ]
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+          [inewsStoryMetadataSequence[0].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0], rank: 1000 })],
+          [inewsStoryMetadataSequence[2].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[2], rank: 7500 })],
+          [inewsStoryMetadataSequence[3].id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[3], rank: 14000 })],
+        ])
+
+        const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
+
+        expect(getRankSortedInewsStoryIds(inewsStoryMetadataSequence, result)).toMatchObject(inewsStoryMetadataSequence.map(inewsStoryMetadata => inewsStoryMetadata.id))
+        expect(result.get(inewsStoryMetadataSequence[0].id)).toBe(1000)
+        expect(result.get(inewsStoryMetadataSequence[2].id)).toBe(7500)
+        expect(result.get(inewsStoryMetadataSequence[3].id)).toBe(14000)
       })
     })
   })
@@ -233,4 +235,12 @@ describe(LogarithmicInewsStoryRankResolver.name, () => {
 
 function createTestee(): InewsStoryRankResolver {
   return new LogarithmicInewsStoryRankResolver()
+}
+
+function getRankSortedInewsStoryIds(inewsStoryMetadataSequence: readonly InewsStoryMetadata[], storyRankMap: ReadonlyMap<string, number>): readonly string[] {
+  return inewsStoryMetadataSequence
+    .map(inewsStoryMetadata => [inewsStoryMetadata.id, storyRankMap.get(inewsStoryMetadata.id)] as [string, number | undefined])
+    .filter((storyIdAndRank): storyIdAndRank is [string, number] => storyIdAndRank[1] !== undefined)
+    .sort((a: [string, number], b: [string, number]) => a[1] - b[1])
+    .map(([storyId]) => storyId)
 }

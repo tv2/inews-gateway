@@ -2,6 +2,7 @@ import * as ws from 'ws'
 import * as http from 'node:http'
 import { Logger } from '../../logger/logger'
 import { ClientConnectionServer, ConnectedCallback, DisconnectedCallback } from '../interfaces/client-connection-server'
+import { WebsocketCloseCode } from '../enums/websocket-close-code'
 
 export class WebsocketServer implements ClientConnectionServer {
   private httpServer?: http.Server
@@ -56,7 +57,7 @@ export class WebsocketServer implements ClientConnectionServer {
       this.connectedCallback?.(clientId, queryParameters)
     } catch (error: unknown) {
       this.logger.data(error).warn(`Failed registering client with client id '${clientId}'.`)
-      websocket.close()
+      websocket.close(WebsocketCloseCode.UNSUPPORTED_DATA, error instanceof Error ? error.message : `${error}`)
     }
   }
 

@@ -8,7 +8,7 @@ const RANK_STEP_SIZE: number = 1000
 const MINIMUM_MEAN_RANK_DISTANCE: number = 15
 const MAX_SAMPLE_SIZE: number = 40
 
-export class LogarithmicInewsStoryRankResolver implements InewsStoryRankResolver {
+export class LinearInewsStoryRankResolver implements InewsStoryRankResolver {
   public getInewsStoryRanks(inewsStoryMetadataSequence: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): ReadonlyMap<string, number> {
     const inewsStoryRanks: readonly RankEntry[] = this.getInewsStoryRankEntries(inewsStoryMetadataSequence, cachedStories)
     const sampledMeanRankDistance: number = this.getSampledMeanRankDistance(inewsStoryRanks)

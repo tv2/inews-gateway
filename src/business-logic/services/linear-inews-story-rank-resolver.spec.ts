@@ -1,11 +1,11 @@
-import { LogarithmicInewsStoryRankResolver } from './logarithmic-inews-story-rank-resolver'
+import { LinearInewsStoryRankResolver } from './linear-inews-story-rank-resolver'
 import { InewsStoryRankResolver } from '../interfaces/inews-story-rank-resolver'
 import { EntityTestFactory } from '../factories/entity-test-factory'
 import { InewsStory } from '../entities/inews-story'
 import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 
-describe(LogarithmicInewsStoryRankResolver.name, () => {
-  describe(LogarithmicInewsStoryRankResolver.prototype.getInewsStoryRanks.name, () => {
+describe(LinearInewsStoryRankResolver.name, () => {
+  describe(LinearInewsStoryRankResolver.prototype.getInewsStoryRanks.name, () => {
     describe('when no stories are cached', () => {
       it('assigns every-increasing unique ranks matching the order of the given sequence', () => {
         const testee: InewsStoryRankResolver = createTestee()
@@ -258,7 +258,7 @@ describe(LogarithmicInewsStoryRankResolver.name, () => {
 })
 
 function createTestee(): InewsStoryRankResolver {
-  return new LogarithmicInewsStoryRankResolver()
+  return new LinearInewsStoryRankResolver()
 }
 
 function getRankSortedInewsStoryIds(inewsStoryMetadataSequence: readonly InewsStoryMetadata[], storyRankMap: ReadonlyMap<string, number>): readonly string[] {

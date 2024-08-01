@@ -73,7 +73,7 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
     }
 
     // Compute ranks
-    const updatedRanks: ReadonlyMap<string, number> = this.computeInewsStoryRanks(storyMetadataSequence, cachedStories)
+    const updatedRanks: ReadonlyMap<string, number> = this.inewsStoryRankResolver.getInewsStoryRanks(storyMetadataSequence, cachedStories)
 
     // Get stories with updated ranks
     const newStories: readonly InewsStory[] = (await this.getStories(queueId, metadataForNewStories)).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
@@ -110,11 +110,6 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
 
   private getStoryMetadataSequence(queueId: string): Promise<readonly InewsStoryMetadata[]> {
     return this.inewsClient.getStoryMetadataForQueue(queueId)
-  }
-
-  private computeInewsStoryRanks(storyMetadataSequence: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): ReadonlyMap<string, number> {
-    // TODO: Measure the rank distance density and standard deviation to determine when to apply a reranking.
-    return this.inewsStoryRankResolver.getInewsStoryRanks(storyMetadataSequence, cachedStories)
   }
 
   private async getStories(queueId: string, storyMetadataCollection: readonly InewsStoryMetadata[]): Promise<readonly InewsStory[]> {

@@ -230,6 +230,30 @@ describe(LogarithmicInewsStoryRankResolver.name, () => {
         expect(result.get(inewsStoryMetadataSequence[3].id)).toBe(14000)
       })
     })
+
+    describe('when the rank sequence have a high density', () => {
+      it('resolves the ranks for all stories as if it was the first resolution iteration', () => {
+        const testee: InewsStoryRankResolver = createTestee()
+        const inewsStoryMetadataSequence: readonly InewsStoryMetadata[] = [
+          EntityTestFactory.createInewsStoryMetadata({ id: 'story-a' }),
+          ...Array(100).fill(null).map((_, index) => EntityTestFactory.createInewsStoryMetadata({ id: `story-${index}` })),
+          EntityTestFactory.createInewsStoryMetadata({ id: 'story-b' }),
+          EntityTestFactory.createInewsStoryMetadata({ id: 'story-c' }),
+          EntityTestFactory.createInewsStoryMetadata({ id: 'story-d' }),
+        ]
+        const cachedStories: ReadonlyMap<string, InewsStory> = new Map([
+          [inewsStoryMetadataSequence[0]!.id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[0], rank: 100 })],
+          [inewsStoryMetadataSequence[101]!.id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[101], rank: 300 })],
+          [inewsStoryMetadataSequence[102]!.id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[102], rank: 400 })],
+          [inewsStoryMetadataSequence[103]!.id, EntityTestFactory.createInewsStory({ ...inewsStoryMetadataSequence[103], rank: 500 })],
+        ])
+
+        const resultWithoutCache: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, new Map())
+        const result: ReadonlyMap<string, number> = testee.getInewsStoryRanks(inewsStoryMetadataSequence, cachedStories)
+
+        result.forEach((rank, storyId) => expect([storyId, rank]).toMatchObject([storyId, resultWithoutCache.get(storyId)]))
+      })
+    })
   })
 })
 

@@ -4,11 +4,22 @@ import { InewsStoryMetadata } from '../value-objects/inews-story-metadata'
 
 type RankEntry = readonly [string, number]
 
-const RANK_STEP_SIZE: number = 10
+const RANK_STEP_SIZE: number = 1000
+const MINIMUM_MEAN_RANK_DISTANCE: number = 15
+const MAX_SAMPLE_SIZE: number = 40
 
 export class LogarithmicInewsStoryRankResolver implements InewsStoryRankResolver {
-  public getInewsStoryRanks(inewsStoryMetadata: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): ReadonlyMap<string, number> {
-    return new Map(this.getCachedRanks(inewsStoryMetadata, cachedStories).reduce(this.updateRankReducer.bind(this), []))
+  public getInewsStoryRanks(inewsStoryMetadataSequence: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): ReadonlyMap<string, number> {
+    const inewsStoryRanks: readonly RankEntry[] = this.getInewsStoryRankEntries(inewsStoryMetadataSequence, cachedStories)
+    const sampledMeanRankDistance: number = this.getSampledMeanRankDistance(inewsStoryRanks)
+    if (sampledMeanRankDistance < MINIMUM_MEAN_RANK_DISTANCE) {
+      return new Map(this.getInewsStoryRankEntries(inewsStoryMetadataSequence, new Map()))
+    }
+    return new Map(inewsStoryRanks)
+  }
+
+  private getInewsStoryRankEntries(inewsStoryMetadataSequence: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): readonly RankEntry[] {
+    return this.getCachedRanks(inewsStoryMetadataSequence, cachedStories).reduce(this.updateRankReducer.bind(this), [])
   }
 
   private getCachedRanks(inewsStoryMetadataSequence: readonly InewsStoryMetadata[], cachedStories: ReadonlyMap<string, InewsStory>): readonly RankEntry[] {
@@ -66,5 +77,14 @@ export class LogarithmicInewsStoryRankResolver implements InewsStoryRankResolver
     const nextRank: number = maybeNextRank ?? previousRank + resolution * RANK_STEP_SIZE
     const rankIncreaseFromPrevious: number = Math.floor((nextRank - previousRank) / resolution)
     return previousRank + Math.max(1, rankIncreaseFromPrevious)
+  }
+
+  private getSampledMeanRankDistance(rankEntries: readonly RankEntry[]): number {
+    const sampleSize: number = Math.min(MAX_SAMPLE_SIZE, rankEntries.length)
+    return rankEntries
+      .map(([,rank], index) => rank - (rankEntries[index - 1]?.[1] ?? 0))
+      .toSorted((rankA, rankB) => rankA - rankB)
+      .slice(0, sampleSize)
+      .reduce((sum: number, rank: number) => sum + rank, 0) / sampleSize
   }
 }

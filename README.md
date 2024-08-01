@@ -21,7 +21,7 @@ The iNews Gateway application acts as an adapter for one or more iNews servers, 
 2. Configure _.env_ file. See [Configuration](#configuration).
 3. Start a development server with `yarn watch`. 
 
-# Configuration
+## Configuration
 
 The application can be configured with environment variables and a _.env_ file. The following snippet outlines the available configuration options.
 
@@ -38,3 +38,10 @@ EVENT_SERVER_PORT=3008
 # The number of milliseconds between fetching data from the iNews server(s). The default is 2000.
 INEWS_POLLING_INTERVAL_IN_MS=2000
 ```
+
+## Usage
+
+### Connecting to the WebSocket event server
+
+A WebSocket client connecting to the iNews Gateway for event observation, needs to specify the queues they want to observe in the query parameter.
+The queues should be specified as comma-separated list, e.g. `ws://inews-gateway:3008?queues=MY.FIRST.QUEUE,MY.SECOND.QUEUE,MY.THIRD.QUEUE`.

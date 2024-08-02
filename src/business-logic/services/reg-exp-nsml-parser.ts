@@ -42,8 +42,7 @@ export class RegExpNsmlParser implements NsmlParser {
     const headFieldTagPattern: RegExp = /<(?<key>\w+)>\s*(?<value>.+?)\s*<\/\w+>/gis
     const head: Partial<NsmlHead> = Object.fromEntries(
       Array.from(
-        headContent
-          .replaceAll(/<(meta) (.*)>/g, '<$1 $2/>')
+        this.convertMetaTagToFieldTags(headContent)
           .matchAll(headFieldTagPattern),
       )
         .map(match => match.groups as { key: string, value: string })
@@ -51,6 +50,20 @@ export class RegExpNsmlParser implements NsmlParser {
     )
     this.assertRequiredKeysForNsmlHead(head)
     return head
+  }
+
+  private convertMetaTagToFieldTags(text: string): string {
+    const metaTagPattern: RegExp = /<meta\s+(?<attributes>[^>]+)\s*>/
+    const attributesText: string | undefined = metaTagPattern.exec(text)?.groups?.attributes
+    if (!attributesText) {
+      return text
+    }
+    const attributePattern: RegExp = /\b(?<key>\w+)(=(?<value>.+?))?\b/gis
+    const attributeTags: string = Array.from(attributesText.matchAll(attributePattern))
+      .map(match => match.groups as { key: string, value?: string })
+      .map(entry => `<${entry.key}>${entry.value ?? entry.key}</${entry.key}>`)
+      .join('\n')
+    return text.replace(/<meta[^>]+>/is, attributeTags)
   }
 
   private assertRequiredKeysForNsmlHead(head: Partial<NsmlHead>): asserts head is NsmlHead {

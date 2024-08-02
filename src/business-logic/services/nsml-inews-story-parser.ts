@@ -21,7 +21,7 @@ export class NsmlInewsStoryParser implements InewsStoryParser {
       queueId,
       contentLocator: inewsId.contentLocator.toUpperCase(),
       versionLocator: inewsId.versionLocator.toUpperCase(),
-      metadata: this.formatMetadata(nsmlDocument.fields),
+      metadata: this.formatMetadata({ ...nsmlDocument.head, ...nsmlDocument.fields }),
       cues: this.mergeIntoCues(nsmlDocument.body, nsmlDocument.anchoredElements),
       rank: 0,
     }

@@ -23,8 +23,6 @@ export class BasicFtpFtpClient implements FtpClient {
 
   public async connect(): Promise<void> {
     try {
-      this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.CONNECTING })
-
       await this.connectWithConfiguration()
 
       this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.CONNECTED })

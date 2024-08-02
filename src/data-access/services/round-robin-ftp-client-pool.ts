@@ -27,7 +27,6 @@ export class RoundRobinFtpClientPool implements FtpClient {
 
   private async getFtpClientByRoundRobin(): Promise<FtpClient> {
     await this.disconnect()
-    this.emitConnectionState({ status: ConnectionStatus.CONNECTING })
 
     for (const ftpClient of this.ftpClients) {
       try {

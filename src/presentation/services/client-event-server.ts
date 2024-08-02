@@ -19,7 +19,7 @@ export class ClientEventServer implements EventServer {
   private lastConnectionStateEvent: ConnectionStateEvent = {
     type: ConnectionStateEventType.CONNECTION_STATE_UPDATED,
     status: ConnectionStatus.DISCONNECTED,
-    message: 'Unknown reason.',
+    message: 'Starting up...',
   }
 
   private readonly queueSubscriptions: Map<string, Set<string>> = new Map()

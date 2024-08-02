@@ -8,5 +8,5 @@ export interface InewsClient {
   getStoryMetadataForQueue(queueId: string): Promise<readonly InewsStoryMetadata[]>
   getStory(queueId: string, inewsId: InewsId): Promise<InewsStory>
   subscribeToConnectionState(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void
-  disconnect(): Promise<void>
+  disconnect(reason: string): Promise<void>
 }

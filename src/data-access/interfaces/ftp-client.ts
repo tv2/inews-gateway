@@ -9,5 +9,5 @@ export interface FtpClient {
   getFile(filename: string): Promise<string>
   setOnConnectionStateChangedCallback(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void
   clearOnConnectionStateChangedCallback(): void
-  disconnect(): Promise<void>
+  disconnect(reason: string): Promise<void>
 }

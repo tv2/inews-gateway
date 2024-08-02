@@ -20,13 +20,13 @@ export class RoundRobinFtpClientPool implements FtpClient {
 
   private async getConnectedFtpClient(): Promise<FtpClient> {
     if (!this.connectedFtpClient?.isConnected()) {
-      this.connectedFtpClient = await this.getFtpClientByRoundRobin()
+      this.connectedFtpClient = await this.getFtpClientByRoundRobin('Connecting for the first time.')
     }
     return this.connectedFtpClient
   }
 
-  private async getFtpClientByRoundRobin(): Promise<FtpClient> {
-    await this.disconnect()
+  private async getFtpClientByRoundRobin(reason: string): Promise<FtpClient> {
+    await this.disconnect(reason)
 
     for (const ftpClient of this.ftpClients) {
       try {
@@ -75,7 +75,7 @@ export class RoundRobinFtpClientPool implements FtpClient {
       return
     }
     this.downPrioritizeConnectedFtpClient()
-    this.connectedFtpClient = await this.getFtpClientByRoundRobin()
+    this.connectedFtpClient = await this.getFtpClientByRoundRobin('The connection had too many failed operations.')
     this.failedOperationsTracker = 0
   }
 
@@ -110,9 +110,9 @@ export class RoundRobinFtpClientPool implements FtpClient {
     delete this.onConnectionStateChangedCallback
   }
 
-  public async disconnect(): Promise<void> {
+  public async disconnect(reason: string): Promise<void> {
     if (this.connectedFtpClient?.isConnected()) {
-      await this.connectedFtpClient?.disconnect()
+      await this.connectedFtpClient?.disconnect(reason)
     }
     this.connectedFtpClient?.clearOnConnectionStateChangedCallback()
   }

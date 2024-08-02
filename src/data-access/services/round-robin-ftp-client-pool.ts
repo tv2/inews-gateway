@@ -23,7 +23,6 @@ export class RoundRobinFtpClientPool implements FtpClient {
   private async getConnectedFtpClient(): Promise<FtpClient> {
     if (!this.connectedFtpClient?.isConnected()) {
       this.connectedFtpClient = await this.getFtpClientByRoundRobin()
-      await this.connectedFtpClient.setListingSize(this.listingSize)
     }
     return this.connectedFtpClient
   }
@@ -35,6 +34,7 @@ export class RoundRobinFtpClientPool implements FtpClient {
     for (const ftpClient of this.ftpClients) {
       try {
         await ftpClient.connect()
+        await ftpClient.setListingSize(this.listingSize)
         this.emitConnectionState({ status: ConnectionStatus.CONNECTED })
         ftpClient.setOnConnectionStateChangedCallback(connectionState => this.emitConnectionState(connectionState))
         return ftpClient

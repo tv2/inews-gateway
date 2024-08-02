@@ -6,6 +6,7 @@ export interface FtpClient {
   isConnected(): boolean
   changeWorkingDirectory(path: string): Promise<void>
   listFiles(): Promise<readonly FileMetadata[]>
+  setListingSize(size: number): Promise<void>
   getFile(filename: string): Promise<string>
   setOnConnectionStateChangedCallback(onConnectionStateChangedCallback: (connectionState: ConnectionState) => void): void
   clearOnConnectionStateChangedCallback(): void

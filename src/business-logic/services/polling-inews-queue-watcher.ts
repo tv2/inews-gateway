@@ -146,6 +146,6 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
 
   public async stop(): Promise<void> {
     this.clearPollingTimer()
-    await this.inewsClient.disconnect()
+    await this.inewsClient.disconnect('Stopped polling iNews queue data.')
   }
 }

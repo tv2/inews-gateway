@@ -23,8 +23,6 @@ export class BasicFtpFtpClient implements FtpClient {
 
   public async connect(): Promise<void> {
     try {
-      this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.CONNECTING })
-
       await this.connectWithConfiguration()
 
       this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.CONNECTED })
@@ -94,12 +92,12 @@ export class BasicFtpFtpClient implements FtpClient {
     return (await fileStream.toArray()).join('')
   }
 
-  public async disconnect(): Promise<void> {
+  public async disconnect(reason: string): Promise<void> {
     if (!this.isConnected()) {
       return
     }
     this.ftpClient.close()
-    this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.DISCONNECTED, message: `The connection to ${this.configuration.host}:${this.configuration.port} was closed.` })
+    this.onConnectionStateChangedCallback?.({ status: ConnectionStatus.DISCONNECTED, message: `The connection to ${this.configuration.host}:${this.configuration.port} was closed: ${reason}` })
     this.logger.info(`Disconnected from FTP server ${this.configuration.host}:${this.configuration.port}.`)
     return Promise.resolve()
   }

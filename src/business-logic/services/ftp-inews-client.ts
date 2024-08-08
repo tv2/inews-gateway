@@ -10,6 +10,8 @@ import { InewsIdParser } from '../interfaces/inews-id-parser'
 import { InewsId } from '../entities/inews-id'
 import { Logger } from '../../logger/logger'
 
+const LISTING_SIZE: number = 10_000
+
 export class FtpInewsClient implements InewsClient {
   private readonly onConnectionStateChangedCallbacks: ((connectionState: ConnectionState) => void)[] = []
   private readonly logger: Logger
@@ -27,6 +29,7 @@ export class FtpInewsClient implements InewsClient {
   public async connect(): Promise<void> {
     this.ftpClient.setOnConnectionStateChangedCallback(connectionState => this.emitConnectionState(connectionState))
     await this.ftpClient.connect()
+    await this.ftpClient.setListingSize(LISTING_SIZE)
   }
 
   private emitConnectionState(connectionState: ConnectionState): void {

@@ -10,6 +10,7 @@ export interface NsmlDocument {
 
 export interface NsmlHead {
   readonly storyid: string
+  readonly float?: 'float'
   readonly [key: string]: string
 }
 

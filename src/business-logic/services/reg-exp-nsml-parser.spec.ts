@@ -1,6 +1,6 @@
 import { RegExpNsmlParser } from './reg-exp-nsml-parser'
 import { NsmlParser } from '../interfaces/nsml-parser'
-import { NsmlDocument, NsmlParagraphType } from '../value-objects/nsml-document'
+import { NsmlDocument, NsmlHead, NsmlParagraphType } from '../value-objects/nsml-document'
 
 describe(RegExpNsmlParser.name, () => {
   describe('when nsml document has no anchored elements', () => {
@@ -38,9 +38,7 @@ describe(RegExpNsmlParser.name, () => {
         fields: { title },
         body: [
           {
-            type: NsmlParagraphType.CUE_REFERENCE,
-            cueId: '0',
-          },
+            type: NsmlParagraphType.CUE_REFERENCE, cueId: '0' },
           {
             type: NsmlParagraphType.COMMENT,
             text: 'Comment',
@@ -62,6 +60,24 @@ describe(RegExpNsmlParser.name, () => {
       const result: NsmlDocument = testee.parseNsmlDocument(text)
 
       expect(result).toMatchObject(expectedNsmlDocument)
+    })
+  })
+
+  describe('when meta tag under head tag has attributes', () => {
+    it('returns the attributes as tag under head', () => {
+      const text: string = '<nsml version="some version 1.0"><head><meta rate=150 float wire mail><storyid>some:story:id</storyid></head><story><fields><f id=title>title</f></fields><body><p><a idref=0></p><p><cc>Comment</cc></p><p><pi>KAM 1</pi></p><p>MANUS</p></body><aeset><ae id=0><ap>First line=Foo</ap><ap>Second line = BAR</ap></ae></aeset></story>'
+      const testee: NsmlParser = createTestee()
+      const expectedHead: NsmlHead = {
+        storyid: 'some:story:id',
+        rate: '150',
+        float: 'float',
+        wire: 'wire',
+        mail: 'mail',
+      }
+
+      const result: NsmlDocument = testee.parseNsmlDocument(text)
+
+      expect(result.head).toMatchObject(expectedHead)
     })
   })
 })

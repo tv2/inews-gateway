@@ -78,6 +78,10 @@ export class BasicFtpFtpClient implements FtpClient {
     return fileInfos.map(fileInfo => this.mapToFileMetadata(fileInfo))
   }
 
+  public async setListingSize(listingSize: number): Promise<void> {
+    await this.ftpClient.send(`SITE LISTSZ=${listingSize}`)
+  }
+
   private mapToFileMetadata(fileInfo: basicFtp.FileInfo): FileMetadata {
     return {
       type: basicFtp.FileType[fileInfo.type].toLowerCase(),

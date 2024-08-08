@@ -6,11 +6,13 @@ import { ConnectionState } from '../value-objects/connection-state'
 const MAX_FAILED_OPERATIONS_THRESHOLD: number = 20
 const SUCCESSFUL_OPERATION_WEIGHT: number = 1
 const FAILED_OPERATION_WEIGHT: number = 2
+const DEFAULT_LISTING_SIZE: number = 1000
 
 export class RoundRobinFtpClientPool implements FtpClient {
   private connectedFtpClient?: FtpClient
   private onConnectionStateChangedCallback?: (connectionState: ConnectionState) => void
   private failedOperationsTracker: number = 0
+  private listingSize: number = DEFAULT_LISTING_SIZE
 
   public constructor(private ftpClients: readonly FtpClient[]) {}
 
@@ -31,6 +33,7 @@ export class RoundRobinFtpClientPool implements FtpClient {
     for (const ftpClient of this.ftpClients) {
       try {
         await ftpClient.connect()
+        await ftpClient.setListingSize(this.listingSize)
         this.emitConnectionState({ status: ConnectionStatus.CONNECTED })
         ftpClient.setOnConnectionStateChangedCallback(connectionState => this.emitConnectionState(connectionState))
         return ftpClient
@@ -92,6 +95,14 @@ export class RoundRobinFtpClientPool implements FtpClient {
     return this.trackFailedOperations(async () => {
       const ftpClient: FtpClient = await this.getConnectedFtpClient()
       return ftpClient.listFiles()
+    })
+  }
+
+  public async setListingSize(listingSize: number): Promise<void> {
+    this.listingSize = listingSize
+    return this.trackFailedOperations(async () => {
+      const ftpClient: FtpClient = await this.getConnectedFtpClient()
+      return ftpClient.setListingSize(listingSize)
     })
   }
 

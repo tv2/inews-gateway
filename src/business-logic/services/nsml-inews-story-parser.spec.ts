@@ -145,6 +145,30 @@ describe(NsmlInewsStoryParser.name, () => {
       expect(result.versionLocator).toBe('22DDEEFF')
     })
   })
+
+  describe('when meta tag under head tag has attributes', () => {
+    it('puts these into the metadata attribute', () => {
+      const storyId: string = '001ea938'
+      const text: string = `<nsml version="some version 1.0"><head><meta rate=150 float wire mail><storyid>${storyId}:xxxxx:yyyyy</storyid></head><story><fields><f id=title>title</f></fields><body><p><a idref=0></p><p><cc>Comment</cc></p><p><pi>KAM 1</pi></p><p>MANUS</p></body><aeset><ae id=0><ap>First line=Foo</ap><ap>Second line = BAR</ap></ae></aeset></story>`
+      const inewsId: InewsId = EntityTestFactory.createInewsId({
+        storyId,
+        contentLocator: '11aabbcc',
+        versionLocator: '22ddeeff',
+      })
+      const expectedMetadata: Readonly<Record<string, string>> = {
+        title: 'title',
+        rate: '150',
+        float: 'float',
+        wire: 'wire',
+        mail: 'mail',
+      }
+      const testee: InewsStoryParser = createTestee()
+
+      const result: InewsStory = testee.parseInewsStory(text, 'queue-id', inewsId)
+
+      expect(result.metadata).toMatchObject(expectedMetadata)
+    })
+  })
 })
 
 function createTestee(): InewsStoryParser {

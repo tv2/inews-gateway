@@ -59,38 +59,41 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
 
   private async checkAndProcessQueue(queueId: string): Promise<void> {
     const inewsQueue: InewsQueue = this.getInewsQueue(queueId)
-    const storyCache: ReadonlyMap<string, InewsStory> = new Map(inewsQueue.stories.map(story => [story.id, story]))
+    const cachedStories: ReadonlyMap<string, InewsStory> = new Map(inewsQueue.stories.map(story => [story.id, story]))
     const storyMetadataSequence: readonly InewsStoryMetadata[] = await this.getStoryMetadataSequence(queueId)
 
     // Categorize
-    const metadataForNewStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForUncachedStories(storyMetadataSequence, storyCache)
-    const metadataForChangedStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForStoriesWithChangedContent(storyMetadataSequence, storyCache)
-    const metadataForMovedStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForMovedStories(storyMetadataSequence, storyCache)
-    const deletedStoryIds: readonly string[] = this.inewsQueueDiffer.getDeletedStoryIds(storyMetadataSequence, storyCache)
+    const metadataForNewStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForUncachedStories(storyMetadataSequence, cachedStories)
+    const metadataForChangedStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForStoriesWithChangedContent(storyMetadataSequence, cachedStories)
+    const metadataForMovedStories: readonly InewsStoryMetadata[] = this.inewsQueueDiffer.getMetadataForMovedStories(storyMetadataSequence, cachedStories)
+    const deletedStoryIds: readonly string[] = this.inewsQueueDiffer.getDeletedStoryIds(storyMetadataSequence, cachedStories)
 
     if (deletedStoryIds.length === 0 && metadataForNewStories.length === 0 && metadataForChangedStories.length === 0 && metadataForMovedStories.length === 0) {
       return
     }
 
     // Compute ranks
-    const updatedRanks: ReadonlyMap<string, number> = this.inewsStoryRankResolver.getInewsStoryRanks(storyMetadataSequence, storyCache)
+    const updatedRanks: ReadonlyMap<string, number> = this.inewsStoryRankResolver.getInewsStoryRanks(storyMetadataSequence, cachedStories)
 
-    // Get stories
+    // Get stories with updated ranks
     const newStories: readonly InewsStory[] = (await this.getStories(queueId, metadataForNewStories)).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
     const changedStories: readonly InewsStory[] = (await this.getStories(queueId, metadataForChangedStories)).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
-    const movedStories: readonly InewsStory[] = metadataForMovedStories.map(storyMetadata => this.getInewsStoryWithUpdatedLocators(storyMetadata, storyCache)).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
+    const movedStories: readonly InewsStory[] = metadataForMovedStories.map(storyMetadata => this.getInewsStoryWithUpdatedLocators(storyMetadata, cachedStories)).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
+    const alteredAndDeletedStoryIds: ReadonlySet<string> = new Set(newStories.concat(changedStories).concat(movedStories).map(story => story.id).concat(deletedStoryIds))
+    const onlyRankUpdatedStories: readonly InewsStory[] = this.getStoriesAffectedByUpdatedRanks(cachedStories, updatedRanks, alteredAndDeletedStoryIds).map(story => ({ ...story, rank: updatedRanks.get(story.id) ?? 0 }))
 
     // Emit data
     deletedStoryIds.forEach(storyId => this.inewsQueueEmitter.emitDeletedInewsStory(queueId, storyId))
     changedStories.forEach(story => this.inewsQueueEmitter.emitChangedInewsStory(story))
     newStories.forEach(story => this.inewsQueueEmitter.emitCreatedInewsStory(story))
     movedStories.forEach(story => this.inewsQueueEmitter.emitMovedInewsStory(story))
+    onlyRankUpdatedStories.forEach(story => this.inewsQueueEmitter.emitMovedInewsStory(story))
 
     // Persist iNews queue
-    const alteredStories: Record<string, InewsStory> = Object.fromEntries(newStories.concat(changedStories).concat(movedStories).map(story => [story.id, story]))
+    const alteredStories: Record<string, InewsStory> = Object.fromEntries(newStories.concat(changedStories).concat(movedStories).concat(onlyRankUpdatedStories).map(story => [story.id, story]))
     this.inewsQueueRepository.setInewsQueue({
       ...inewsQueue,
-      stories: storyMetadataSequence.map(storyMetadata => alteredStories[storyMetadata.id] ?? storyCache.get(storyMetadata.id)!),
+      stories: storyMetadataSequence.map(storyMetadata => alteredStories[storyMetadata.id] ?? cachedStories.get(storyMetadata.id)!),
     })
   }
 
@@ -127,6 +130,10 @@ export class PollingInewsQueueWatcher implements InewsQueueWatcher {
       contentLocator: storyMetadata.contentLocator,
       versionLocator: storyMetadata.versionLocator,
     }
+  }
+
+  private getStoriesAffectedByUpdatedRanks(storyCache: ReadonlyMap<string, InewsStory>, ranks: ReadonlyMap<string, number>, alteredStoryIds: ReadonlySet<string>): readonly InewsStory[] {
+    return Array.from(storyCache.values()).filter(story => !alteredStoryIds.has(story.id) && ranks.get(story.id) && ranks.get(story.id) !== story.rank)
   }
 
   private clearPollingTimer(): void {
